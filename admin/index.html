@@ -436,17 +436,26 @@
       const urlEl = document.getElementById('dbgUrl');
       const statusEl = document.getElementById('dbgStatus');
       const url = window.ROPHIM_CONFIG.SUPABASE_URL;
+      const key = window.ROPHIM_CONFIG.SUPABASE_ANON_KEY;
       urlEl.textContent = url;
       try {
-        const r = await fetch(url + '/auth/v1/settings', { method: 'GET' });
-        if (r.ok) {
-          const data = await r.json();
+        // Test 1: ping root (no auth needed) - check if project exists / paused
+        const r1 = await fetch(url + '/auth/v1/settings', {
+          method: 'GET',
+          headers: { 'apikey': key }
+        });
+        if (r1.ok) {
+          const data = await r1.json();
           statusEl.innerHTML = `<span style="color:#4ade80">✅ Kết nối OK</span> — Mailer autoconfirm: <strong>${data.mailer_autoconfirm}</strong>`;
+        } else if (r1.status === 401) {
+          statusEl.innerHTML = `<span style="color:#fca5a5">❌ HTTP 401 — Key không hợp lệ</span><br><small style="color:var(--text-3)">Có thể: (1) Key copy sai/thiếu ký tự, (2) Lấy key từ project khác, (3) Project đang pause</small>`;
+        } else if (r1.status === 404) {
+          statusEl.innerHTML = `<span style="color:#fca5a5">❌ HTTP 404 — Project không tồn tại</span><br><small style="color:var(--text-3)">URL sai, kiểm tra lại Project Ref</small>`;
         } else {
-          statusEl.innerHTML = `<span style="color:#fbbf24">⚠ HTTP ${r.status}</span> — Project có thể sai hoặc đang pause`;
+          statusEl.innerHTML = `<span style="color:#fbbf24">⚠ HTTP ${r1.status}</span><br><small style="color:var(--text-3)">${r1.statusText || 'Lỗi không xác định'}</small>`;
         }
       } catch (err) {
-        statusEl.innerHTML = `<span style="color:#fca5a5">❌ ${err.message}</span> — Kiểm tra URL có đúng không`;
+        statusEl.innerHTML = `<span style="color:#fca5a5">❌ ${err.message}</span><br><small style="color:var(--text-3)">URL không tồn tại hoặc mạng có vấn đề</small>`;
       }
     }
     document.getElementById('testConnBtn').onclick = () => {
