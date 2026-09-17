@@ -13,7 +13,7 @@
 window.ROPHIM_CONFIG = {
   // === Thay bằng giá trị thật từ Supabase project của bạn ===
   SUPABASE_URL: 'https://zzaudicmeqgxncmwzrwq.supabase.co',
-  SUPABASE_ANON_KEY: 'sb_publishable_aepz0nfY7bskhOHqnUQV7g_rHYvBg5B',
+  SUPABASE_ANON_KEY: 'sb_publishable_SpEa_nzUQqGx030C1vi5mA_FnBqN0uv',
 
   // Tên bucket lưu video trong Supabase Storage
   VIDEOS_BUCKET: 'videos',
