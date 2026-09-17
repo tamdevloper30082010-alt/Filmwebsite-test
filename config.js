@@ -3,7 +3,7 @@
 // ============================================================
 // Hướng dẫn:
 //   1. Tạo project miễn phí tại https://supabase.com
-//   2. Vào Project Settings → API, copy URL và anon public key
+//   2. Vào Project Settings → API, copy URL và publishable key
 //   3. Paste vào 2 biến bên dưới
 //   4. Vào SQL Editor, chạy toàn bộ file schema.sql để tạo bảng
 //   5. Vào Storage, tạo bucket tên "videos" (public)
@@ -11,9 +11,9 @@
 // ============================================================
 
 window.ROPHIM_CONFIG = {
-  // Thay bằng giá trị thật từ Supabase project của bạn
-  SUPABASE_URL: 'https://YOUR-PROJECT.supabase.co',
-  SUPABASE_ANON_KEY: 'YOUR-ANON-PUBLIC-KEY-HERE',
+  // === Thay bằng giá trị thật từ Supabase project của bạn ===
+  SUPABASE_URL: 'https://aepz0nfY7bskhOHqnUQV7g.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_aepz0nfY7bskhOHqnUQV7g_rHYvBg5B',
 
   // Tên bucket lưu video trong Supabase Storage
   VIDEOS_BUCKET: 'videos',
