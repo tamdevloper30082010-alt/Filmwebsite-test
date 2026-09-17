@@ -279,7 +279,16 @@
       <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--text-3)">
         <strong>Lần đầu dùng?</strong> Bấm "Tạo tài khoản" để tạo user admin đầu tiên. Sau đó dùng chính email/mật khẩu đó để đăng nhập.
         <br><br>
-        ⚠️ Cần cấu hình <code>config.js</code> trước — xem <a href="README.md" style="color:var(--brand-2)">README</a> để biết chi tiết.
+        ⚠️ Cần cấu hình <code>config.js</code> trước — xem <a href="../README.md" style="color:var(--brand-2)">README</a> để biết chi tiết.
+      </div>
+
+      <div style="margin-top:18px;padding:14px;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;font-size:12px">
+        <strong style="color:var(--text-2)">🔧 Debug kết nối</strong>
+        <div id="debugInfo" style="margin-top:8px;font-family:monospace;font-size:11px;color:var(--text-3);word-break:break-all">
+          <div>URL: <span id="dbgUrl">—</span></div>
+          <div>Status: <span id="dbgStatus">Đang kiểm tra...</span></div>
+        </div>
+        <button type="button" id="testConnBtn" class="btn btn-sm btn-ghost" style="margin-top:10px">🔄 Test kết nối</button>
       </div>
     </section>
 
@@ -415,11 +424,35 @@
       loginScreen.innerHTML = `
         <h1>⚠ Demo Mode</h1>
         <p>Supabase chưa được cấu hình. Mở file <code>config.js</code> và điền URL + anon key từ project Supabase của bạn để bắt đầu.</p>
-        <p>Xem <a href="README.md" style="color:var(--brand-2)">hướng dẫn cài đặt</a> để biết chi tiết.</p>
+        <p>Xem <a href="../README.md" style="color:var(--brand-2)">hướng dẫn cài đặt</a> để biết chi tiết.</p>
       `;
     } else {
       checkAuth();
+      runConnTest();
     }
+
+    // ---------- Connection test ----------
+    async function runConnTest() {
+      const urlEl = document.getElementById('dbgUrl');
+      const statusEl = document.getElementById('dbgStatus');
+      const url = window.ROPHIM_CONFIG.SUPABASE_URL;
+      urlEl.textContent = url;
+      try {
+        const r = await fetch(url + '/auth/v1/settings', { method: 'GET' });
+        if (r.ok) {
+          const data = await r.json();
+          statusEl.innerHTML = `<span style="color:#4ade80">✅ Kết nối OK</span> — Mailer autoconfirm: <strong>${data.mailer_autoconfirm}</strong>`;
+        } else {
+          statusEl.innerHTML = `<span style="color:#fbbf24">⚠ HTTP ${r.status}</span> — Project có thể sai hoặc đang pause`;
+        }
+      } catch (err) {
+        statusEl.innerHTML = `<span style="color:#fca5a5">❌ ${err.message}</span> — Kiểm tra URL có đúng không`;
+      }
+    }
+    document.getElementById('testConnBtn').onclick = () => {
+      document.getElementById('dbgStatus').textContent = 'Đang kiểm tra...';
+      runConnTest();
+    };
 
     async function checkAuth() {
       try {
@@ -452,9 +485,13 @@
 
     // ---------- Auth ----------
     function showLoginError(msg) {
+      // Make "Failed to fetch" more helpful
+      if (msg === 'Failed to fetch' || msg.includes('fetch')) {
+        msg = '❌ Không kết nối được Supabase. Kiểm tra URL trong config.js hoặc xem phần Debug bên dưới.';
+      }
       loginMsg.textContent = msg;
       loginMsg.classList.remove('hidden');
-      setTimeout(() => loginMsg.classList.add('hidden'), 5000);
+      setTimeout(() => loginMsg.classList.add('hidden'), 8000);
     }
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -462,8 +499,11 @@
       const fd = new FormData(e.target);
       const email = fd.get('email').trim();
       const password = fd.get('password');
+      loginMsg.textContent = 'Đang đăng nhập...';
+      loginMsg.classList.remove('hidden');
       try {
         await RophimAuth.signIn(email, password);
+        loginMsg.classList.add('hidden');
       } catch (err) {
         showLoginError(err.message);
       }
