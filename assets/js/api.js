@@ -20,7 +20,7 @@ const RophimAPI = (() => {
     let q = window.sb.from('movies').select('*');
     if (genre && genre !== 'all') q = q.eq('genre', genre);
     if (year && year !== 'all') q = q.eq('year', Number(year));
-    if (search) q = q.or(`title.ilike.%${search}%,description.ilike.%${search}%,cast.ilike.%${search}%`);
+    if (search) q = q.or(`title.ilike.%${search}%,description.ilike.%${search}%,cast_list.ilike.%${search}%`);
     q = q.order(sort, { ascending: order === 'asc' });
     if (limit) q = q.limit(limit);
     const { data, error } = await q;

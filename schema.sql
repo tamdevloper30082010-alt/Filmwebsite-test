@@ -15,7 +15,7 @@ create table if not exists public.movies (
   quality text not null default 'HD',           -- 'HD' | 'FHD' | '4K'
   country text default '',
   director text default '',
-  cast text default '',
+  cast_list text default '',
   duration text default '',                      -- ví dụ: "120 phút" hoặc "45 phút/tập"
   rating numeric(3,1) default 0,                -- 0.0 - 10.0
   poster text default '',                        -- URL ảnh poster

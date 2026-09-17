@@ -343,7 +343,7 @@
                 <input name="director" placeholder="Đạo diễn...">
               </label>
               <label>Diễn viên
-                <input name="cast" placeholder="Diễn viên chính...">
+                <input name="cast_list" placeholder="Diễn viên chính...">
               </label>
               <label>Thời lượng
                 <input name="duration" placeholder="120 phút hoặc 45 phút/tập">
@@ -589,7 +589,7 @@
           quality: fd.get('quality'),
           country: fd.get('country') || '',
           director: fd.get('director') || '',
-          cast: fd.get('cast') || '',
+          cast_list: fd.get('cast_list') || '',
           duration: fd.get('duration') || '',
           rating: Number(fd.get('rating') || 0),
           poster: fd.get('poster') || '',

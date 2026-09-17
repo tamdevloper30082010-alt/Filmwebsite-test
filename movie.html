@@ -140,7 +140,7 @@
         const cast = document.getElementById('cast');
         const castRows = [];
         if (movie.director) castRows.push(`<div class="detail-cast-row"><span class="detail-cast-label">Đạo diễn:</span><span>${RophimUI.esc(movie.director)}</span></div>`);
-        if (movie.cast) castRows.push(`<div class="detail-cast-row"><span class="detail-cast-label">Diễn viên:</span><span>${RophimUI.esc(movie.cast)}</span></div>`);
+        if (movie.cast_list) castRows.push(`<div class="detail-cast-row"><span class="detail-cast-label">Diễn viên:</span><span>${RophimUI.esc(movie.cast_list)}</span></div>`);
         if (movie.country) castRows.push(`<div class="detail-cast-row"><span class="detail-cast-label">Quốc gia:</span><span>${RophimUI.esc(movie.country)}</span></div>`);
         cast.innerHTML = castRows.join('');
 
