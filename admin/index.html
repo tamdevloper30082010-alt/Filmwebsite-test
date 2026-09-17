@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Panel — Rophim</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-size='62' font-family='Arial' font-weight='900' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/detail.css">
+  <style>
+    .admin-page { padding: 24px 0; }
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .admin-header h1 {
+      font-size: 28px;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .admin-tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .admin-tab {
+      padding: 12px 20px;
+      background: transparent;
+      border: 0;
+      color: var(--text-3);
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all .2s;
+    }
+    .admin-tab:hover { color: var(--text); }
+    .admin-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--brand-1);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .form-grid .full { grid-column: 1/-1; }
+    .form-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: var(--text-2);
+      font-size: 13px;
+    }
+    .form-grid input,
+    .form-grid select,
+    .form-grid textarea {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 13px;
+      color: var(--text);
+      font: inherit;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-grid input:focus,
+    .form-grid select:focus,
+    .form-grid textarea:focus {
+      border-color: var(--brand-1);
+    }
+    .form-grid textarea { resize: vertical; min-height: 80px; }
+
+    .panel {
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .panel h2 {
+      font-size: 20px;
+      margin: 0 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .panel h2::before {
+      content: '';
+      display: inline-block;
+      width: 4px; height: 20px;
+      border-radius: 2px;
+      background: var(--brand-grad);
+    }
+
+    .episode-editor {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .episode-row {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .episode-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .episode-number {
+      font-size: 15px;
+      color: var(--text);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .episode-number::before {
+      content: '';
+      width: 4px; height: 18px;
+      background: var(--brand-grad);
+      border-radius: 2px;
+    }
+    .episode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .episode-grid .full { grid-column: 1/-1; }
+    .episode-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: var(--text-2);
+      font-size: 13px;
+    }
+    .episode-grid input,
+    .episode-grid select {
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font: inherit;
+      outline: none;
+    }
+    .episode-grid input[type=file] {
+      padding: 9px;
+      font-size: 12px;
+    }
+
+    .file-info {
+      margin-top: 10px;
+      color: var(--text-2);
+      background: var(--bg-1);
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+    .file-info.has-file {
+      border-color: var(--brand-1);
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    .upload-progress {
+      margin-top: 10px;
+      height: 6px;
+      background: var(--bg-1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .upload-progress-bar {
+      height: 100%;
+      background: var(--brand-grad);
+      width: 0;
+      transition: width .2s;
+    }
+
+    .movie-list {
+      display: grid;
+      gap: 10px;
+    }
+    .movie-row {
+      display: grid;
+      grid-template-columns: 60px 1fr auto auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    .movie-row .thumb {
+      width: 60px; height: 80px;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      background-color: var(--bg-3);
+    }
+
+    /* Login screen */
+    .login-screen {
+      max-width: 420px;
+      margin: 80px auto;
+      padding: 40px;
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+    }
+    .login-screen h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    .login-screen p {
+      color: var(--text-3);
+      margin: 0 0 24px;
+      font-size: 14px;
+    }
+    .login-screen .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .auth-banner {
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--text-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .auth-banner strong { color: var(--text); }
+
+    @media (max-width: 720px) {
+      .form-grid, .episode-grid { grid-template-columns: 1fr; }
+      .episode-grid .full { grid-column: auto; }
+      .movie-row { grid-template-columns: 50px 1fr; }
+      .movie-row .row-actions { grid-column: 1/-1; display: flex; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div data-role="header"></div>
+
+  <main class="container admin-page">
+    <!-- LOGIN SCREEN -->
+    <section id="loginScreen" class="login-screen hidden">
+      <h1>🔐 Admin Panel</h1>
+      <p>Đăng nhập để upload và quản lý toàn bộ website.</p>
+
+      <div id="loginMsg" class="msg hidden" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px"></div>
+
+      <form id="loginForm" class="form-grid">
+        <label class="full">Email
+          <input name="email" type="email" required placeholder="admin@example.com">
+        </label>
+        <label class="full">Mật khẩu
+          <input name="password" type="password" required placeholder="••••••••">
+        </label>
+        <button type="submit" class="btn btn-primary full">Đăng nhập</button>
+        <button type="button" id="signupBtn" class="btn btn-ghost full">Tạo tài khoản Admin mới</button>
+      </form>
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--text-3)">
+        <strong>Lần đầu dùng?</strong> Bấm "Tạo tài khoản" để tạo user admin đầu tiên. Sau đó dùng chính email/mật khẩu đó để đăng nhập.
+        <br><br>
+        ⚠️ Cần cấu hình <code>config.js</code> trước — xem <a href="README.md" style="color:var(--brand-2)">README</a> để biết chi tiết.
+      </div>
+    </section>
+
+    <!-- ADMIN PANEL -->
+    <section id="adminPanel" class="hidden">
+      <div style="margin-bottom:8px;padding:12px 16px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:10px;font-size:13px;color:var(--text-2);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <span>📍 Bạn đang ở trang quản trị riêng biệt tại <code>/admin/</code>. Trang này không hiển thị với khách truy cập.</span>
+      </div>
+      <div class="admin-header">
+        <div>
+          <h1>⚙ Quản trị</h1>
+          <p class="muted" id="adminUserLine">Đang tải...</p>
+        </div>
+        <div style="display:flex;gap:10px">
+          <a href="../index.html" class="btn btn-ghost">← Về trang chủ</a>
+          <button id="logoutBtn" class="btn btn-danger">Đăng xuất</button>
+        </div>
+      </div>
+
+      <div class="auth-banner">
+        <span><strong>Chào admin!</strong> Mọi thay đổi sẽ được lưu vào Supabase và hiển thị cho mọi người xem.</span>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="upload">📤 Đăng phim</button>
+        <button class="admin-tab" data-tab="manage">📚 Quản lý phim</button>
+      </div>
+
+      <!-- UPLOAD TAB -->
+      <div id="uploadTab" class="admin-tab-content">
+        <div class="panel">
+          <h2>Thông tin phim</h2>
+          <form id="movieForm">
+            <div class="form-grid">
+              <label class="full">Tên phim *
+                <input name="title" required placeholder="Ví dụ: Đào Chi Anh">
+              </label>
+              <label>Loại phim *
+                <select name="type" required>
+                  <option value="series">Phim bộ / nhiều tập</option>
+                  <option value="single">Phim lẻ</option>
+                </select>
+              </label>
+              <label>Thể loại *
+                <select name="genre" id="genreSelectForm" required></select>
+              </label>
+              <label>Năm *
+                <input name="year" type="number" min="1900" max="2100" value="2026" required>
+              </label>
+              <label>Chất lượng *
+                <select name="quality" required>
+                  <option value="HD">HD</option>
+                  <option value="FHD" selected>FHD</option>
+                  <option value="4K">4K</option>
+                </select>
+              </label>
+              <label>Quốc gia
+                <input name="country" placeholder="Việt Nam">
+              </label>
+              <label>Đạo diễn
+                <input name="director" placeholder="Đạo diễn...">
+              </label>
+              <label>Diễn viên
+                <input name="cast" placeholder="Diễn viên chính...">
+              </label>
+              <label>Thời lượng
+                <input name="duration" placeholder="120 phút hoặc 45 phút/tập">
+              </label>
+              <label>Đánh giá (0-10)
+                <input name="rating" type="number" step="0.1" min="0" max="10" value="7.5">
+              </label>
+              <label>Poster URL
+                <input name="poster" placeholder="https://...">
+              </label>
+              <label>Backdrop URL
+                <input name="backdrop" placeholder="https://...">
+              </label>
+              <label class="full">Mô tả
+                <textarea name="description" rows="3" placeholder="Mô tả phim..."></textarea>
+              </label>
+              <label class="full" style="flex-direction:row;align-items:center;gap:8px">
+                <input type="checkbox" name="featured" style="width:auto;margin:0">
+                <span>Hiển thị ở Hero carousel trang chủ</span>
+              </label>
+            </div>
+
+            <h2 style="margin-top:30px">Danh sách tập / Video</h2>
+            <p class="muted" style="margin-top:-12px;margin-bottom:14px">Mỗi tập có thể upload file từ máy hoặc nhập URL video (YouTube, Vimeo, .mp4, .m3u8...).</p>
+            <div id="episodes" class="episode-editor"></div>
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:24px;flex-wrap:wrap">
+              <button type="button" class="btn btn-ghost" id="addEpisodeBtn">＋ Thêm tập</button>
+              <span class="muted">Upload video sẽ tự lưu vào Supabase Storage.</span>
+            </div>
+
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <button type="submit" class="btn btn-primary" id="submitBtn">📤 Đăng phim</button>
+              <button type="reset" class="btn btn-ghost" id="resetBtn">Làm lại</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- MANAGE TAB -->
+      <div id="manageTab" class="admin-tab-content hidden">
+        <div class="panel">
+          <h2>Danh sách phim <span class="muted" id="manageCount"></span></h2>
+          <div id="movieList" class="movie-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../config.js"></script>
+  <script src="../assets/js/supabase.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script>
+    renderChrome();
+
+    // ---------- Setup ----------
+    let episodeSeq = 0;
+    const loginScreen = document.getElementById('loginScreen');
+    const adminPanel = document.getElementById('adminPanel');
+    const loginMsg = document.getElementById('loginMsg');
+
+    // Populate genres
+    document.getElementById('genreSelectForm').innerHTML =
+      RophimAPI.GENRES.map(g => `<option value="${RophimUI.esc(g)}">${RophimUI.esc(g)}</option>`).join('');
+
+    // Check demo mode
+    if (RophimAPI.isDemo()) {
+      loginScreen.classList.remove('hidden');
+      loginScreen.innerHTML = `
+        <h1>⚠ Demo Mode</h1>
+        <p>Supabase chưa được cấu hình. Mở file <code>config.js</code> và điền URL + anon key từ project Supabase của bạn để bắt đầu.</p>
+        <p>Xem <a href="README.md" style="color:var(--brand-2)">hướng dẫn cài đặt</a> để biết chi tiết.</p>
+      `;
+    } else {
+      checkAuth();
+    }
+
+    async function checkAuth() {
+      try {
+        const user = await RophimAuth.user();
+        if (user) {
+          showAdmin(user);
+        } else {
+          loginScreen.classList.remove('hidden');
+        }
+        RophimAuth.onChange((u) => {
+          if (u) showAdmin(u);
+          else {
+            adminPanel.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+          }
+        });
+      } catch (err) {
+        console.error(err);
+        loginScreen.classList.remove('hidden');
+      }
+    }
+
+    function showAdmin(user) {
+      loginScreen.classList.add('hidden');
+      adminPanel.classList.remove('hidden');
+      document.getElementById('adminUserLine').textContent = `Đang đăng nhập: ${user.email}`;
+      addEpisode();
+      loadMovieList();
+    }
+
+    // ---------- Auth ----------
+    function showLoginError(msg) {
+      loginMsg.textContent = msg;
+      loginMsg.classList.remove('hidden');
+      setTimeout(() => loginMsg.classList.add('hidden'), 5000);
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const email = fd.get('email').trim();
+      const password = fd.get('password');
+      try {
+        await RophimAuth.signIn(email, password);
+      } catch (err) {
+        showLoginError(err.message);
+      }
+    });
+
+    document.getElementById('signupBtn').addEventListener('click', async () => {
+      const fd = new FormData(document.getElementById('loginForm'));
+      const email = fd.get('email').trim();
+      const password = fd.get('password');
+      if (!email || !password) return showLoginError('Nhập email và mật khẩu trước.');
+      if (password.length < 6) return showLoginError('Mật khẩu phải ≥ 6 ký tự.');
+      try {
+        await RophimAuth.signUp(email, password);
+        RophimUI.toast('Tạo tài khoản thành công! Đang đăng nhập...', 'success');
+      } catch (err) {
+        showLoginError(err.message);
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await RophimAuth.signOut();
+      location.reload();
+    });
+
+    // ---------- Tabs ----------
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+      tab.onclick = () => {
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const target = tab.dataset.tab + 'Tab';
+        document.getElementById('uploadTab').classList.toggle('hidden', target !== 'uploadTab');
+        document.getElementById('manageTab').classList.toggle('hidden', target !== 'manageTab');
+        if (target === 'manageTab') loadMovieList();
+      };
+    });
+
+    // ---------- Episodes editor ----------
+    function addEpisode(data = {}) {
+      episodeSeq++;
+      const id = `ep-${episodeSeq}`;
+      const box = document.createElement('div');
+      box.className = 'episode-row';
+      box.dataset.ep = id;
+      box.innerHTML = `
+        <div class="episode-top">
+          <span class="episode-number">Tập</span>
+          <button type="button" class="btn btn-sm btn-danger" data-remove>× Xóa</button>
+        </div>
+        <div class="episode-grid">
+          <label>Tên tập
+            <input data-title value="${RophimUI.esc(data.title || '')}" placeholder="Tập ${episodeSeq}">
+          </label>
+          <label>Thời lượng (giây)
+            <input data-duration type="number" min="0" value="${data.duration || 0}">
+          </label>
+          <label class="full">Upload file video
+            <input data-file type="file" accept="video/*">
+          </label>
+          <label class="full">Hoặc URL video (YouTube, Vimeo, .mp4, .m3u8)
+            <input data-url value="${RophimUI.esc(data.url || '')}" placeholder="https://...">
+          </label>
+        </div>
+        <div class="file-info" data-info>Chưa chọn file.</div>
+      `;
+      box.querySelector('[data-file]').addEventListener('change', (e) => {
+        const f = e.target.files[0];
+        const info = box.querySelector('[data-info]');
+        if (f) {
+          info.classList.add('has-file');
+          info.textContent = `✓ ${f.name} • ${RophimUI.formatSize(f.size)} • ${f.type || 'video'}`;
+        } else {
+          info.classList.remove('has-file');
+          info.textContent = 'Chưa chọn file.';
+        }
+      });
+      box.querySelector('[data-remove]').onclick = () => {
+        box.remove();
+        renumber();
+      };
+      document.getElementById('episodes').appendChild(box);
+      renumber();
+    }
+
+    function renumber() {
+      document.querySelectorAll('.episode-row').forEach((el, i) => {
+        el.querySelector('.episode-number').textContent = `Tập ${i + 1}`;
+        const t = el.querySelector('[data-title]');
+        if (!t.value) t.placeholder = `Tập ${i + 1}`;
+      });
+    }
+
+    document.getElementById('addEpisodeBtn').onclick = () => addEpisode();
+
+    document.getElementById('resetBtn').onclick = () => {
+      setTimeout(() => {
+        document.getElementById('episodes').innerHTML = '';
+        episodeSeq = 0;
+        addEpisode();
+      }, 0);
+    };
+
+    // ---------- Submit ----------
+    document.getElementById('movieForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const fd = new FormData(form);
+      const rows = document.querySelectorAll('.episode-row');
+      if (!rows.length) {
+        return RophimUI.toast('Hãy thêm ít nhất 1 tập.', 'error');
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Đang upload...';
+
+      try {
+        // 1) Create movie first
+        const movieData = {
+          title: fd.get('title').trim(),
+          type: fd.get('type'),
+          genre: fd.get('genre'),
+          year: Number(fd.get('year')),
+          quality: fd.get('quality'),
+          country: fd.get('country') || '',
+          director: fd.get('director') || '',
+          cast: fd.get('cast') || '',
+          duration: fd.get('duration') || '',
+          rating: Number(fd.get('rating') || 0),
+          poster: fd.get('poster') || '',
+          backdrop: fd.get('backdrop') || '',
+          description: fd.get('description') || '',
+          featured: fd.get('featured') === 'on',
+        };
+        const movie = await RophimAPI.upsertMovie(movieData);
+        btn.textContent = 'Đang upload video...';
+
+        // 2) Upload each episode
+        let i = 0;
+        for (const row of rows) {
+          const file = row.querySelector('[data-file]').files[0];
+          const url = row.querySelector('[data-url]').value.trim();
+          const title = row.querySelector('[data-title]').value.trim() || `Tập ${i + 1}`;
+          const duration = Number(row.querySelector('[data-duration]').value || 0);
+          const info = row.querySelector('[data-info]');
+
+          if (!file && !url) {
+            throw new Error(`Tập ${i + 1}: chọn file hoặc nhập URL.`);
+          }
+
+          info.classList.add('has-file');
+          let videoUrl = url;
+          let videoPath = '';
+
+          if (file) {
+            info.innerHTML = `⏳ Đang upload ${file.name}... <div class="upload-progress"><div class="upload-progress-bar"></div></div>`;
+            const result = await RophimAPI.uploadVideo(file, movie.id, i + 1);
+            videoUrl = result.url;
+            videoPath = result.path;
+            info.innerHTML = `✓ Đã upload: ${file.name}`;
+          } else {
+            info.innerHTML = `✓ Dùng URL: ${url}`;
+          }
+
+          await RophimAPI.addEpisode({
+            movie_id: movie.id,
+            episode_number: i + 1,
+            title,
+            video_url: videoUrl,
+            video_path: videoPath,
+            duration,
+          });
+          i++;
+        }
+
+        RophimUI.toast(`Đã đăng phim "${movie.title}" với ${i} tập!`, 'success');
+        form.reset();
+        document.getElementById('episodes').innerHTML = '';
+        episodeSeq = 0;
+        addEpisode();
+        loadMovieList();
+        // Switch to manage tab
+        document.querySelector('[data-tab="manage"]').click();
+      } catch (err) {
+        console.error(err);
+        RophimUI.toast('Lỗi: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 Đăng phim';
+      }
+    });
+
+    // ---------- Manage list ----------
+    async function loadMovieList() {
+      const c = document.getElementById('movieList');
+      c.innerHTML = Array.from({ length: 3 }, () => '<div class="skeleton" style="height:80px"></div>').join('');
+      try {
+        const movies = await RophimAPI.listMovies({ sort: 'created_at' });
+        document.getElementById('manageCount').textContent = `(${movies.length})`;
+        if (!movies.length) {
+          c.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><h3>Chưa có phim nào</h3><p>Vào tab "Đăng phim" để thêm phim đầu tiên.</p></div>';
+          return;
+        }
+        c.innerHTML = movies.map(m => `
+          <div class="movie-row" data-id="${RophimUI.esc(m.id)}">
+            <div class="thumb" style="background-image:url('${RophimUI.esc(m.poster || '')}')"></div>
+            <div>
+              <h3 style="margin:0 0 4px;font-size:16px">${RophimUI.esc(m.title)}</h3>
+              <div class="muted">${RophimUI.esc(m.genre)} • ${RophimUI.esc(String(m.year))} • ${RophimUI.esc(m.quality)} • ${m.type === 'series' ? 'Phim bộ' : 'Phim lẻ'}</div>
+            </div>
+            <a href="../movie.html?id=${RophimUI.esc(m.id)}" class="btn btn-ghost btn-sm" target="_blank">Xem</a>
+            <div class="row-actions">
+              <button class="btn btn-sm btn-danger" data-delete="${RophimUI.esc(m.id)}">🗑</button>
+            </div>
+          </div>
+        `).join('');
+
+        c.querySelectorAll('[data-delete]').forEach(btn => {
+          btn.onclick = async () => {
+            const id = btn.dataset.delete;
+            const m = movies.find(x => x.id === id);
+            if (!confirm(`Xóa phim "${m.title}"? Toàn bộ tập và file video sẽ bị xóa vĩnh viễn.`)) return;
+            try {
+              await RophimAPI.deleteMovie(id);
+              RophimUI.toast('Đã xóa phim.', 'success');
+              loadMovieList();
+            } catch (err) {
+              RophimUI.toast('Lỗi: ' + err.message, 'error');
+            }
+          };
+        });
+      } catch (err) {
+        console.error(err);
+        c.innerHTML = '<p class="muted">Lỗi tải danh sách phim.</p>';
+      }
+    }
+  </script>
+</body>
+</html>

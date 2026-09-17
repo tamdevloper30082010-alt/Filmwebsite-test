@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rophim — Kho phim của bạn</title>
+  <meta name="description" content="Xem phim online chất lượng cao. Phim bộ, phim lẻ, hoạt hình với hàng ngàn tựa hấp dẫn.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-size='62' font-family='Arial' font-weight='900' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div data-role="demo-banner"></div>
+  <div data-role="header"></div>
+
+  <main class="container">
+    <!-- HERO CAROUSEL -->
+    <section class="hero" id="hero">
+      <div class="hero-backdrop" id="heroBackdrop"></div>
+      <div class="hero-body" id="heroBody">
+        <!-- injected by JS -->
+      </div>
+      <div class="hero-pager" id="heroPager"></div>
+    </section>
+
+    <!-- TRENDING / TOP RATED -->
+    <section class="section">
+      <div class="row-head">
+        <h2>🔥 Top thịnh hành</h2>
+        <a class="muted" href="browse.html?sort=views">Xem tất cả →</a>
+      </div>
+      <div class="card-grid" id="gridTop"></div>
+    </section>
+
+    <!-- NEW RELEASES -->
+    <section class="section">
+      <div class="row-head">
+        <h2>✨ Mới cập nhật</h2>
+        <a class="muted" href="browse.html?sort=created_at">Xem tất cả →</a>
+      </div>
+      <div class="card-grid" id="gridNew"></div>
+    </section>
+
+    <!-- BY GENRE: ACTION -->
+    <section class="section">
+      <div class="row-head">
+        <h2>💥 Hành động gay cấn</h2>
+        <a class="muted" href="browse.html?genre=Hành+động">Xem thêm →</a>
+      </div>
+      <div class="card-grid" id="gridAction"></div>
+    </section>
+
+    <!-- BY GENRE: ROMANCE -->
+    <section class="section">
+      <div class="row-head">
+        <h2>💖 Tình cảm lãng mạn</h2>
+        <a class="muted" href="browse.html?genre=Tình+cảm">Xem thêm →</a>
+      </div>
+      <div class="card-grid" id="gridRomance"></div>
+    </section>
+
+    <!-- BY GENRE: ANIMATION -->
+    <section class="section">
+      <div class="row-head">
+        <h2>🎨 Hoạt hình hay</h2>
+        <a class="muted" href="browse.html?genre=Hoạt+hình">Xem thêm →</a>
+      </div>
+      <div class="card-grid" id="gridAnimation"></div>
+    </section>
+
+    <!-- BY GENRE: HORROR + MYSTERY -->
+    <section class="section">
+      <div class="row-head">
+        <h2>👻 Kinh dị & Bí ẩn</h2>
+        <a class="muted" href="browse.html?genre=Kinh+dị">Xem thêm →</a>
+      </div>
+      <div class="card-grid" id="gridHorror"></div>
+    </section>
+  </main>
+
+  <div data-role="footer"></div>
+
+  <script src="config.js"></script>
+  <script src="assets/js/supabase.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script>
+    renderChrome('home');
+
+    // ---------- Hero carousel ----------
+    let heroItems = [];
+    let heroIndex = 0;
+    let heroTimer = null;
+
+    function renderHeroItem(m) {
+      const body = document.getElementById('heroBody');
+      body.innerHTML = `
+        <span class="hero-eyebrow">Nổi bật · ${RophimUI.esc(m.quality || 'HD')}</span>
+        <h1 class="hero-title">${RophimUI.esc(m.title)}</h1>
+        <div class="hero-meta">
+          ${m.rating ? `<span class="badge">⭐ ${m.rating.toFixed(1)}</span>` : ''}
+          <span>${RophimUI.esc(m.year || '')}</span>
+          <span>•</span>
+          <span>${RophimUI.esc(m.genre || '')}</span>
+          ${m.country ? `<span>•</span><span>${RophimUI.esc(m.country)}</span>` : ''}
+          ${m.duration ? `<span>•</span><span>${RophimUI.esc(m.duration)}</span>` : ''}
+        </div>
+        <p class="hero-desc">${RophimUI.esc((m.description || '').slice(0, 200))}${(m.description || '').length > 200 ? '...' : ''}</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="watch.html?id=${RophimUI.esc(m.id)}">▶ Xem ngay</a>
+          <a class="btn btn-ghost" href="movie.html?id=${RophimUI.esc(m.id)}">ℹ Chi tiết</a>
+        </div>
+      `;
+      const backdrop = document.getElementById('heroBackdrop');
+      backdrop.style.backgroundImage = `url('${m.backdrop || m.poster || ''}')`;
+    }
+
+    function setHero(idx) {
+      if (!heroItems.length) return;
+      heroIndex = (idx + heroItems.length) % heroItems.length;
+      renderHeroItem(heroItems[heroIndex]);
+      document.querySelectorAll('.hero-dot').forEach((d, i) => d.classList.toggle('active', i === heroIndex));
+    }
+
+    function startHeroAutoplay() {
+      stopHeroAutoplay();
+      heroTimer = setInterval(() => setHero(heroIndex + 1), 6000);
+    }
+    function stopHeroAutoplay() {
+      if (heroTimer) { clearInterval(heroTimer); heroTimer = null; }
+    }
+
+    async function loadHero() {
+      try {
+        const featured = await RophimAPI.getFeatured();
+        heroItems = featured.length ? featured : await RophimAPI.listMovies({ limit: 5 });
+        if (!heroItems.length) return;
+        const pager = document.getElementById('heroPager');
+        pager.innerHTML = heroItems.map((_, i) => `<div class="hero-dot ${i === 0 ? 'active' : ''}" data-idx="${i}"></div>`).join('');
+        pager.addEventListener('click', (e) => {
+          const dot = e.target.closest('.hero-dot');
+          if (!dot) return;
+          setHero(Number(dot.dataset.idx));
+          startHeroAutoplay();
+        });
+        setHero(0);
+        startHeroAutoplay();
+        const hero = document.getElementById('hero');
+        hero.addEventListener('mouseenter', stopHeroAutoplay);
+        hero.addEventListener('mouseleave', startHeroAutoplay);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // ---------- Movie rows ----------
+    async function loadRow(containerId, fetcher) {
+      const c = document.getElementById(containerId);
+      c.innerHTML = Array.from({ length: 6 }, () => '<div class="skeleton"></div>').join('');
+      try {
+        const movies = await fetcher();
+        // attach episodes_count for series cards
+        const enriched = await Promise.all(movies.map(async m => {
+          if (m.type === 'series') {
+            const eps = await RophimAPI.getEpisodes(m.id);
+            return { ...m, episodes_count: eps.length };
+          }
+          return m;
+        }));
+        if (enriched.length) {
+          RophimUI.renderMovieGrid(c, enriched);
+          c.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', () => {
+              location.href = 'movie.html?id=' + card.dataset.id;
+            });
+          });
+        } else {
+          c.innerHTML = '';
+        }
+        return enriched.length;
+      } catch (err) {
+        console.error(err);
+        c.innerHTML = '';
+        return 0;
+      }
+    }
+
+    // Show big empty state when site has no movies yet
+    function showSiteEmpty() {
+      const hero = document.getElementById('hero');
+      hero.innerHTML = `
+        <div style="position:relative;z-index:2;padding:80px 32px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px">
+          <div style="font-size:72px;opacity:.4">🎬</div>
+          <h2 style="margin:0;font-size:32px;letter-spacing:-0.02em">Website chưa có phim nào</h2>
+          <p style="color:var(--text-2);max-width:520px;margin:0;line-height:1.6">
+            Đây là trang web phim của bạn. Truy cập trang quản trị để upload phim đầu tiên.
+            Mọi thay đổi sẽ hiển thị ngay tại đây.
+          </p>
+          <a href="admin/" class="btn btn-primary" style="margin-top:8px">⚙ Vào trang quản trị</a>
+        </div>
+      `;
+      // Hide all rows
+      document.querySelectorAll('main .section').forEach(s => s.style.display = 'none');
+    }
+
+    // ---------- Init ----------
+    (async () => {
+      const heroOk = await loadHero();
+      const totalMovies = await RophimAPI.listMovies({ limit: 1 });
+      if (!totalMovies.length) {
+        showSiteEmpty();
+        return;
+      }
+      loadRow('gridTop', () => RophimAPI.listMovies({ sort: 'views', order: 'desc', limit: 6 }));
+      loadRow('gridNew', () => RophimAPI.listMovies({ sort: 'year', order: 'desc', limit: 6 }));
+      loadRow('gridAction', () => RophimAPI.listMovies({ genre: 'Hành động', limit: 6 }));
+      loadRow('gridRomance', () => RophimAPI.listMovies({ genre: 'Tình cảm', limit: 6 }));
+      loadRow('gridAnimation', () => RophimAPI.listMovies({ genre: 'Hoạt hình', limit: 6 }));
+      loadRow('gridHorror', () => RophimAPI.listMovies({ genre: 'Kinh dị', limit: 6 }));
+    })();
+  </script>
+</body>
+</html>

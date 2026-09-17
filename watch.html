@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Xem phim — Rophim</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-size='62' font-family='Arial' font-weight='900' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/detail.css">
+</head>
+<body>
+  <div data-role="demo-banner"></div>
+  <div data-role="header"></div>
+
+  <main class="container">
+    <div id="loading" style="padding:60px;text-align:center;color:var(--text-3)">Đang tải...</div>
+
+    <article id="content" class="hidden">
+      <!-- Top breadcrumb / back -->
+      <div style="display:flex;align-items:center;gap:12px;margin:24px 0 16px;font-size:13px;color:var(--text-3)">
+        <a href="index.html">← Trang chủ</a>
+        <span>/</span>
+        <a href="#" id="movieLink">Phim</a>
+        <span>/</span>
+        <span id="currentEpLabel" style="color:var(--text)"></span>
+      </div>
+
+      <div class="watch-grid">
+        <!-- Left: Player -->
+        <div>
+          <div class="player-section">
+            <div class="player-wrapper" id="playerWrap">
+              <div class="player-empty">
+                <div>
+                  <div style="font-size:48px;margin-bottom:12px;opacity:.4">▶</div>
+                  <p>Chọn một tập để bắt đầu xem</p>
+                </div>
+              </div>
+            </div>
+            <div id="serverList" class="server-list hidden">
+              <span class="server-list-label">Server:</span>
+              <!-- server buttons injected here -->
+            </div>
+          </div>
+
+          <div class="player-info">
+            <h1 id="movieTitle">Đang tải...</h1>
+            <p class="muted" id="movieMeta"></p>
+          </div>
+
+          <!-- Up Next / Auto-play suggestion -->
+          <div id="upNext" class="hidden" style="background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px;margin-top:20px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div style="font-size:28px">⏭</div>
+              <div style="flex:1">
+                <div style="font-weight:600" id="upNextTitle">Tập tiếp theo</div>
+                <div class="muted" id="upNextMeta">Tự động chuyển sau 5 giây</div>
+              </div>
+              <button class="btn btn-primary btn-sm" id="upNextBtn">Xem ngay</button>
+              <button class="btn btn-ghost btn-sm" id="upNextCancel">Hủy</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Episodes panel -->
+        <aside class="episodes-panel" id="episodesPanel">
+          <h3>
+            <span id="episodesPanelTitle">Danh sách tập</span>
+            <span class="eps-count" id="episodesCount">0</span>
+          </h3>
+          <div id="episodesList" class="episodes-grid" style="grid-template-columns:repeat(auto-fill, minmax(70px, 1fr))"></div>
+        </aside>
+      </div>
+
+      <!-- Related -->
+      <section class="watch-related">
+        <div class="row-head">
+          <h2>🎯 Phim tương tự</h2>
+        </div>
+        <div class="card-grid" id="relatedGrid"></div>
+      </section>
+    </article>
+  </main>
+
+  <div data-role="footer"></div>
+
+  <script src="config.js"></script>
+  <script src="assets/js/supabase.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script>
+    renderChrome();
+
+    const params = new URLSearchParams(location.search);
+    const movieId = params.get('id');
+    let currentMovie = null;
+    let episodes = [];
+    let currentEpIndex = 0;
+    let upNextTimer = null;
+
+    // ---------- Helpers ----------
+    function isYouTube(url) {
+      return url && /(?:youtube\.com\/|youtu\.be\/)/i.test(url);
+    }
+    function youtubeEmbed(url) {
+      try {
+        const u = new URL(url);
+        let id = '';
+        if (u.hostname.includes('youtu.be')) id = u.pathname.slice(1);
+        else id = u.searchParams.get('v') || (u.pathname.split('/embed/')[1] || '');
+        return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1` : '';
+      } catch { return ''; }
+    }
+    function isVimeo(url) {
+      return url && /vimeo\.com/i.test(url);
+    }
+    function vimeoEmbed(url) {
+      try {
+        const u = new URL(url);
+        const id = u.pathname.split('/').filter(Boolean).pop();
+        return id ? `https://player.vimeo.com/video/${id}` : '';
+      } catch { return ''; }
+    }
+
+    function setupPlayer(url) {
+      const wrap = document.getElementById('playerWrap');
+      if (!url) {
+        wrap.innerHTML = '<div class="player-empty"><div><div style="font-size:48px;margin-bottom:12px;opacity:.4">▶</div><p>Video không khả dụng</p></div></div>';
+        return;
+      }
+
+      if (isYouTube(url)) {
+        const embedUrl = youtubeEmbed(url);
+        if (embedUrl) {
+          wrap.innerHTML = `<iframe src="${embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+          return;
+        }
+      }
+      if (isVimeo(url)) {
+        const embedUrl = vimeoEmbed(url);
+        if (embedUrl) {
+          wrap.innerHTML = `<iframe src="${embedUrl}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+          return;
+        }
+      }
+
+      // Direct video file
+      wrap.innerHTML = `
+        <video controls autoplay playsinline preload="metadata" controlsList="nodownload">
+          <source src="${RophimUI.esc(url)}">
+          Trình duyệt không hỗ trợ phát video.
+        </video>
+      `;
+      const v = wrap.querySelector('video');
+      v.style.width = '100%';
+      v.style.height = '100%';
+      v.onerror = () => {
+        wrap.innerHTML = '<div class="player-empty"><div><div style="font-size:48px;margin-bottom:12px">⚠</div><p>Không thể phát video này. Hãy thử server khác.</p></div></div>';
+      };
+    }
+
+    function renderServerList(ep) {
+      const list = document.getElementById('serverList');
+      const groupByServer = {};
+      ep.video_urls_by_server?.forEach(s => {
+        groupByServer[s.server] = s.url;
+      });
+
+      // For demo we just show one server. For real, server list comes from API.
+      const urls = Object.entries(groupByServer);
+      if (urls.length <= 1) {
+        list.classList.add('hidden');
+        return;
+      }
+      list.classList.remove('hidden');
+      list.innerHTML = '<span class="server-list-label">Server:</span>' + urls.map(([name], i) =>
+        `<button class="server-btn ${i === 0 ? 'active' : ''}" data-url="${RophimUI.esc(urls[i][1])}">${RophimUI.esc(name)}</button>`
+      ).join('');
+      list.querySelectorAll('.server-btn').forEach(btn => {
+        btn.onclick = () => {
+          list.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          setupPlayer(btn.dataset.url);
+        };
+      });
+    }
+
+    function renderEpisodesList() {
+      const c = document.getElementById('episodesCount');
+      c.textContent = episodes.length;
+
+      const list = document.getElementById('episodesList');
+      const history = RophimUI.getHistoryForMovie(movieId);
+      const watchedSet = new Set(history.map(h => h.episodeId));
+
+      if (!episodes.length) {
+        list.innerHTML = '<div class="muted" style="grid-column:1/-1;text-align:center;padding:30px">Phim này không có tập nào.</div>';
+        return;
+      }
+
+      list.innerHTML = episodes.map((ep, i) => `
+        <button class="episode-btn ${watchedSet.has(ep.id) ? 'watched' : ''} ${i === currentEpIndex ? 'active' : ''}" data-idx="${i}">
+          <span class="ep-num">${ep.episode_number}</span>
+          ${ep.duration ? `<span class="ep-title">${RophimUI.formatDuration(ep.duration)}</span>` : ''}
+        </button>
+      `).join('');
+
+      list.querySelectorAll('.episode-btn').forEach(btn => {
+        btn.onclick = () => {
+          playEpisode(Number(btn.dataset.idx));
+        };
+      });
+    }
+
+    function playEpisode(index) {
+      const ep = episodes[index];
+      if (!ep) return;
+      currentEpIndex = index;
+
+      // Update active state
+      document.querySelectorAll('#episodesList .episode-btn').forEach((b, i) => {
+        b.classList.toggle('active', i === index);
+      });
+
+      // Player
+      const url = ep.video_url || '';
+      setupPlayer(url);
+      renderServerList(ep);
+
+      // Update breadcrumb
+      document.getElementById('currentEpLabel').textContent = currentMovie.type === 'single' ? 'Full' : `Tập ${ep.episode_number}`;
+      document.title = `${currentMovie.title} - Tập ${ep.episode_number} — Rophim`;
+
+      // Save history
+      RophimUI.pushHistory(movieId, ep.id, ep.episode_number);
+      // Re-render to mark watched
+      renderEpisodesList();
+      document.querySelector(`#episodesList .episode-btn[data-idx="${index}"]`)?.classList.add('active');
+
+      // Cancel any pending up-next
+      if (upNextTimer) { clearTimeout(upNextTimer); upNextTimer = null; }
+      document.getElementById('upNext').classList.add('hidden');
+
+      // Auto-next on video end
+      const video = document.querySelector('#playerWrap video');
+      if (video) {
+        video.onended = () => {
+          const next = episodes[index + 1];
+          if (next) showUpNext(next, index + 1);
+        };
+      }
+
+      // Update URL without reload
+      const newUrl = new URL(location.href);
+      newUrl.searchParams.set('ep', ep.episode_number);
+      history.replaceState(null, '', newUrl);
+    }
+
+    function showUpNext(nextEp, nextIdx) {
+      const box = document.getElementById('upNext');
+      document.getElementById('upNextTitle').textContent = `${currentMovie.title} - Tập ${nextEp.episode_number}`;
+      document.getElementById('upNextBtn').onclick = () => {
+        playEpisode(nextIdx);
+      };
+      document.getElementById('upNextCancel').onclick = () => {
+        box.classList.add('hidden');
+        if (upNextTimer) { clearTimeout(upNextTimer); upNextTimer = null; }
+      };
+      box.classList.remove('hidden');
+      upNextTimer = setTimeout(() => playEpisode(nextIdx), 5000);
+    }
+
+    async function load() {
+      if (!movieId) {
+        document.getElementById('loading').textContent = 'Không có ID phim.';
+        return;
+      }
+      try {
+        currentMovie = await RophimAPI.getMovie(movieId);
+        if (!currentMovie) {
+          document.getElementById('loading').textContent = 'Không tìm thấy phim.';
+          return;
+        }
+
+        episodes = await RophimAPI.getEpisodes(movieId);
+
+        // Update page
+        document.title = `${currentMovie.title} — Rophim`;
+        document.getElementById('movieTitle').textContent = currentMovie.title;
+        document.getElementById('movieLink').textContent = currentMovie.title;
+        document.getElementById('movieLink').href = `movie.html?id=${movieId}`;
+        document.getElementById('movieMeta').textContent = [
+          currentMovie.year,
+          currentMovie.genre,
+          currentMovie.country,
+          currentMovie.duration,
+        ].filter(Boolean).join(' • ');
+
+        if (currentMovie.type === 'single') {
+          document.getElementById('episodesPanelTitle').textContent = 'Thông tin';
+          document.getElementById('currentEpLabel').textContent = 'Full';
+        }
+
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('content').classList.remove('hidden');
+
+        renderEpisodesList();
+
+        // Determine start episode
+        const requestedEp = params.get('ep');
+        let startIdx = 0;
+        if (requestedEp) {
+          const found = episodes.findIndex(e => String(e.episode_number) === String(requestedEp));
+          if (found >= 0) startIdx = found;
+        } else {
+          // Continue from last watched
+          const history = RophimUI.getHistoryForMovie(movieId);
+          if (history.length) {
+            const lastWatched = history[0].episodeNumber;
+            const next = episodes.findIndex(e => e.episode_number === lastWatched);
+            // Try next episode first
+            if (next >= 0 && next + 1 < episodes.length) startIdx = next + 1;
+            else if (next >= 0) startIdx = next;
+          }
+        }
+
+        if (episodes.length) {
+          playEpisode(startIdx);
+        } else {
+          document.getElementById('playerWrap').innerHTML = '<div class="player-empty"><div><div style="font-size:48px;margin-bottom:12px;opacity:.4">📭</div><p>Phim này chưa có tập nào.</p></div></div>';
+        }
+
+        // Related
+        const related = await RophimAPI.getRelated(movieId, currentMovie.genre);
+        RophimUI.renderMovieGrid(document.getElementById('relatedGrid'), related);
+        document.querySelectorAll('#relatedGrid .card').forEach(c => {
+          c.onclick = () => location.href = 'movie.html?id=' + c.dataset.id;
+        });
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loading').textContent = 'Lỗi tải phim: ' + err.message;
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

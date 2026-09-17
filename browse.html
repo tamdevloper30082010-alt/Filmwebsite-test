@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Khám phá — Rophim</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-size='62' font-family='Arial' font-weight='900' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/detail.css">
+</head>
+<body>
+  <div data-role="demo-banner"></div>
+  <div data-role="header"></div>
+
+  <main class="container">
+    <section style="padding:24px 0 8px">
+      <h1 id="pageTitle" style="font-size:32px;margin:0 0 8px;letter-spacing:-0.02em">Khám phá</h1>
+      <p class="muted" id="pageSubtitle">Tìm phim theo thể loại, năm, hoặc từ khóa</p>
+    </section>
+
+    <!-- Filter bar -->
+    <section class="filter-bar" style="background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px;margin:20px 0">
+      <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:end">
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span class="muted">Tìm kiếm</span>
+          <input id="searchInput" type="search" placeholder="Tên phim, diễn viên, đạo diễn..." style="background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text);font:inherit;outline:none">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span class="muted">Thể loại</span>
+          <select id="genreSelect" style="background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text);font:inherit;min-width:140px;outline:none"></select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span class="muted">Năm</span>
+          <select id="yearSelect" style="background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text);font:inherit;min-width:120px;outline:none"></select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span class="muted">Sắp xếp</span>
+          <select id="sortSelect" style="background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text);font:inherit;min-width:160px;outline:none">
+            <option value="created_at-desc">Mới nhất</option>
+            <option value="year-desc">Năm (mới → cũ)</option>
+            <option value="year-asc">Năm (cũ → mới)</option>
+            <option value="rating-desc">Đánh giá cao</option>
+            <option value="views-desc">Xem nhiều</option>
+            <option value="title-asc">Tên A-Z</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Quick chips -->
+      <div class="chips" id="quickChips" style="margin-top:16px;margin-bottom:0">
+        <button class="chip active" data-type="">Tất cả</button>
+        <button class="chip" data-type="series">Phim bộ</button>
+        <button class="chip" data-type="single">Phim lẻ</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="row-head">
+        <h2 id="resultTitle">Kết quả</h2>
+        <span class="muted" id="resultCount">0 phim</span>
+      </div>
+      <div class="card-grid" id="grid"></div>
+    </section>
+  </main>
+
+  <div data-role="footer"></div>
+
+  <script src="config.js"></script>
+  <script src="assets/js/supabase.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script>
+    renderChrome('browse');
+
+    const params = new URLSearchParams(location.search);
+    const state = {
+      q: params.get('q') || '',
+      genre: params.get('genre') || 'all',
+      year: params.get('year') || 'all',
+      type: params.get('type') || '',
+      sort: params.get('sort') || 'created_at',
+      order: params.get('order') || 'desc',
+    };
+
+    // Populate select options
+    const genreSelect = document.getElementById('genreSelect');
+    genreSelect.innerHTML = '<option value="all">Tất cả</option>' +
+      RophimAPI.GENRES.map(g => `<option value="${RophimUI.esc(g)}" ${state.genre === g ? 'selected' : ''}>${RophimUI.esc(g)}</option>`).join('');
+
+    const yearSelect = document.getElementById('yearSelect');
+    const currentYear = new Date().getFullYear();
+    yearSelect.innerHTML = '<option value="all">Tất cả</option>' +
+      Array.from({ length: 12 }, (_, i) => currentYear - i).map(y => `<option value="${y}" ${String(state.year) === String(y) ? 'selected' : ''}>${y}</option>`).join('');
+
+    const sortSelect = document.getElementById('sortSelect');
+    sortSelect.value = `${state.sort}-${state.order}`;
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.value = state.q;
+
+    // Type chips
+    document.querySelectorAll('#quickChips .chip').forEach(chip => {
+      if (chip.dataset.type === state.type) {
+        document.querySelectorAll('#quickChips .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      }
+    });
+
+    // Update page title
+    function updateTitle() {
+      const titleEl = document.getElementById('pageTitle');
+      const subEl = document.getElementById('pageSubtitle');
+      if (state.type === 'series') { titleEl.textContent = 'Phim bộ'; subEl.textContent = 'Khám phá các bộ phim nhiều tập hấp dẫn'; }
+      else if (state.type === 'single') { titleEl.textContent = 'Phim lẻ'; subEl.textContent = 'Khám phá các bộ phim lẻ đặc sắc'; }
+      else if (state.genre !== 'all') { titleEl.textContent = `Thể loại: ${state.genre}`; subEl.textContent = 'Tất cả phim thuộc thể loại này'; }
+      else if (state.q) { titleEl.textContent = `Tìm kiếm: "${state.q}"`; subEl.textContent = 'Kết quả tìm kiếm'; }
+      else { titleEl.textContent = 'Khám phá'; subEl.textContent = 'Tìm phim theo thể loại, năm, hoặc từ khóa'; }
+    }
+    updateTitle();
+
+    let searchTimer = null;
+    async function load() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = Array.from({ length: 8 }, () => '<div class="skeleton"></div>').join('');
+
+      try {
+        const filters = {};
+        if (state.genre !== 'all') filters.genre = state.genre;
+        if (state.year !== 'all') filters.year = state.year;
+        if (state.q) filters.search = state.q;
+        filters.sort = state.sort;
+        filters.order = state.order;
+
+        let movies = await RophimAPI.listMovies(filters);
+        if (state.type) {
+          movies = movies.filter(m => m.type === state.type);
+        }
+
+        // Enrich with episode count
+        movies = await Promise.all(movies.map(async m => {
+          if (m.type === 'series') {
+            const eps = await RophimAPI.getEpisodes(m.id);
+            return { ...m, episodes_count: eps.length };
+          }
+          return m;
+        }));
+
+        RophimUI.renderMovieGrid(grid, movies, 'Thử thay đổi bộ lọc hoặc từ khóa khác.');
+        document.getElementById('resultCount').textContent = `${movies.length} phim`;
+        grid.querySelectorAll('.card').forEach(card => {
+          card.onclick = () => location.href = 'movie.html?id=' + card.dataset.id;
+        });
+      } catch (err) {
+        console.error(err);
+        grid.innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><p>Lỗi tải phim</p></div>';
+      }
+    }
+
+    function updateUrl() {
+      const p = new URLSearchParams();
+      if (state.q) p.set('q', state.q);
+      if (state.genre !== 'all') p.set('genre', state.genre);
+      if (state.year !== 'all') p.set('year', state.year);
+      if (state.type) p.set('type', state.type);
+      if (state.sort !== 'created_at') p.set('sort', state.sort);
+      if (state.order !== 'desc') p.set('order', state.order);
+      history.replaceState(null, '', 'browse.html' + (p.toString() ? '?' + p : ''));
+    }
+
+    function reload() { updateTitle(); updateUrl(); load(); }
+
+    // Wire up filters
+    searchInput.addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => { state.q = e.target.value.trim(); reload(); }, 350);
+    });
+    genreSelect.onchange = () => { state.genre = genreSelect.value; reload(); };
+    yearSelect.onchange = () => { state.year = yearSelect.value; reload(); };
+    sortSelect.onchange = () => {
+      const [sort, order] = sortSelect.value.split('-');
+      state.sort = sort; state.order = order;
+      reload();
+    };
+    document.querySelectorAll('#quickChips .chip').forEach(chip => {
+      chip.onclick = () => {
+        document.querySelectorAll('#quickChips .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        state.type = chip.dataset.type;
+        reload();
+      };
+    });
+
+    load();
+  </script>
+</body>
+</html>

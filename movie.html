@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chi tiết phim — Rophim</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-size='62' font-family='Arial' font-weight='900' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/detail.css">
+</head>
+<body>
+  <div data-role="demo-banner"></div>
+  <div data-role="header"></div>
+
+  <main class="container">
+    <div id="loading" style="padding:80px;text-align:center;color:var(--text-3)">
+      <div class="skeleton" style="max-width:300px;margin:0 auto 20px"></div>
+      <div class="skeleton" style="max-width:600px;height:24px;margin:0 auto"></div>
+    </div>
+
+    <article id="content" class="hidden">
+      <!-- Hero with backdrop -->
+      <section class="detail-hero">
+        <div class="hero-backdrop" id="backdrop"></div>
+        <div class="detail-hero-body">
+          <div class="detail-poster" id="poster"></div>
+          <div class="detail-info">
+            <span id="breadcrumb" class="hero-eyebrow"></span>
+            <h1 id="title"></h1>
+            <p class="original-title" id="originalTitle"></p>
+            <div class="detail-meta" id="meta"></div>
+            <div class="detail-actions">
+              <a id="watchBtn" href="#" class="btn btn-primary">▶ Xem phim</a>
+              <button id="watchlistBtn" class="btn btn-ghost">＋ Yêu thích</button>
+              <button id="shareBtn" class="btn btn-ghost">🔗 Chia sẻ</button>
+            </div>
+            <p class="detail-description" id="description"></p>
+            <div class="detail-cast" id="cast"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Episodes list (only for series) -->
+      <section id="episodesSection" class="episodes-section hidden">
+        <h2>Danh sách tập</h2>
+        <div id="episodesGrid" class="episodes-grid"></div>
+      </section>
+
+      <!-- Related movies -->
+      <section class="section">
+        <div class="row-head">
+          <h2>🎯 Có thể bạn cũng thích</h2>
+        </div>
+        <div class="card-grid" id="relatedGrid"></div>
+      </section>
+    </article>
+  </main>
+
+  <div data-role="footer"></div>
+
+  <script src="config.js"></script>
+  <script src="assets/js/supabase.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script>
+    renderChrome();
+
+    const params = new URLSearchParams(location.search);
+    const movieId = params.get('id');
+
+    async function loadMovie() {
+      if (!movieId) {
+        document.getElementById('loading').innerHTML = '<p>Không có ID phim.</p>';
+        return;
+      }
+      try {
+        const movie = await RophimAPI.getMovie(movieId);
+        if (!movie) {
+          document.getElementById('loading').innerHTML = '<p>Không tìm thấy phim.</p>';
+          return;
+        }
+
+        // Increment views (best-effort, non-blocking)
+        if (!RophimAPI.isDemo() && movie.id) {
+          window.sb.from('movies').update({ views: (movie.views || 0) + 1 }).eq('id', movie.id).then(() => {});
+        }
+
+        document.title = `${movie.title} — Rophim`;
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('content').classList.remove('hidden');
+
+        document.getElementById('backdrop').style.backgroundImage = `url('${movie.backdrop || movie.poster || ''}')`;
+        document.getElementById('poster').style.backgroundImage = `url('${movie.poster || ''}')`;
+        document.getElementById('breadcrumb').textContent = `${movie.genre || ''} · ${movie.country || ''}`;
+        document.getElementById('title').textContent = movie.title;
+        document.getElementById('originalTitle').textContent = movie.original_title || '';
+        document.getElementById('description').textContent = movie.description || 'Chưa có mô tả cho phim này.';
+
+        // Meta
+        const meta = document.getElementById('meta');
+        const metaItems = [];
+        if (movie.rating) metaItems.push(`<span class="badge badge-rating">⭐ ${Number(movie.rating).toFixed(1)}</span>`);
+        metaItems.push(`<span class="badge badge-quality">${RophimUI.esc(movie.quality || 'HD')}</span>`);
+        if (movie.year) metaItems.push(`<div class="detail-meta-item">${RophimUI.esc(movie.year)}</div>`);
+        if (movie.duration) metaItems.push(`<div class="detail-meta-item">⏱ ${RophimUI.esc(movie.duration)}</div>`);
+        if (movie.type === 'series') metaItems.push(`<div class="detail-meta-item">📺 Phim bộ</div>`);
+        else metaItems.push(`<div class="detail-meta-item">🎬 Phim lẻ</div>`);
+        if (movie.views) metaItems.push(`<div class="detail-meta-item">👁 ${RophimUI.formatViews(movie.views)} lượt xem</div>`);
+        meta.innerHTML = metaItems.join('<span class="dot">•</span>');
+
+        // Watch button
+        document.getElementById('watchBtn').href = `watch.html?id=${movie.id}`;
+
+        // Watchlist
+        const wlBtn = document.getElementById('watchlistBtn');
+        function updateWatchlistBtn() {
+          const inList = RophimUI.isInWatchlist(movie.id);
+          wlBtn.textContent = inList ? '✓ Đã yêu thích' : '＋ Yêu thích';
+          wlBtn.style.background = inList ? 'rgba(99, 102, 241, 0.2)' : '';
+          wlBtn.style.borderColor = inList ? 'var(--brand-1)' : '';
+        }
+        updateWatchlistBtn();
+        wlBtn.onclick = () => {
+          const added = RophimUI.toggleWatchlist(movie.id);
+          RophimUI.toast(added ? 'Đã thêm vào yêu thích' : 'Đã xóa khỏi yêu thích', 'success');
+          updateWatchlistBtn();
+        };
+
+        // Share
+        document.getElementById('shareBtn').onclick = () => {
+          if (navigator.share) {
+            navigator.share({ title: movie.title, text: movie.description, url: location.href }).catch(() => {});
+          } else {
+            navigator.clipboard.writeText(location.href);
+            RophimUI.toast('Đã copy link!', 'success');
+          }
+        };
+
+        // Cast/director
+        const cast = document.getElementById('cast');
+        const castRows = [];
+        if (movie.director) castRows.push(`<div class="detail-cast-row"><span class="detail-cast-label">Đạo diễn:</span><span>${RophimUI.esc(movie.director)}</span></div>`);
+        if (movie.cast) castRows.push(`<div class="detail-cast-row"><span class="detail-cast-label">Diễn viên:</span><span>${RophimUI.esc(movie.cast)}</span></div>`);
+        if (movie.country) castRows.push(`<div class="detail-cast-row"><span class="detail-cast-label">Quốc gia:</span><span>${RophimUI.esc(movie.country)}</span></div>`);
+        cast.innerHTML = castRows.join('');
+
+        // Episodes (series only)
+        if (movie.type === 'series') {
+          const eps = await RophimAPI.getEpisodes(movie.id);
+          const history = RophimUI.getHistoryForMovie(movie.id);
+          const watched = new Set(history.map(h => h.episodeId));
+          const grid = document.getElementById('episodesGrid');
+          grid.innerHTML = eps.map(ep => `
+            <button class="episode-btn ${watched.has(ep.id) ? 'watched' : ''}" data-id="${RophimUI.esc(ep.id)}" data-num="${ep.episode_number}">
+              <span class="ep-num">${ep.episode_number}</span>
+              <span class="ep-title">${RophimUI.esc(ep.title || 'Tập ' + ep.episode_number)}</span>
+            </button>
+          `).join('');
+          grid.addEventListener('click', (e) => {
+            const btn = e.target.closest('.episode-btn');
+            if (!btn) return;
+            location.href = `watch.html?id=${movie.id}&ep=${btn.dataset.num}`;
+          });
+          document.getElementById('episodesSection').classList.remove('hidden');
+        }
+
+        // Related
+        const related = await RophimAPI.getRelated(movie.id, movie.genre);
+        RophimUI.renderMovieGrid(document.getElementById('relatedGrid'), related);
+        document.querySelectorAll('#relatedGrid .card').forEach(c => {
+          c.onclick = () => location.href = 'movie.html?id=' + c.dataset.id;
+        });
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loading').innerHTML = '<p>Lỗi tải phim.</p>';
+      }
+    }
+
+    loadMovie();
+  </script>
+</body>
+</html>
