@@ -160,8 +160,8 @@ window.renderChrome = function (active = '') {
   if (demoBanner && window.ROPHIM_CONFIG.SHOW_DEMO_BANNER && window.ROPHIM_DEMO_MODE) {
     demoBanner.innerHTML = `
       <div class="demo-banner">
-        <strong>Chưa kết nối Supabase.</strong>
-        Website đang ở chế độ trống. Cấu hình Supabase trong <code>config.js</code> và truy cập <a href="admin/">trang quản trị</a> để upload phim.
+        <strong>Website đang trong chế độ trống.</strong>
+        Chưa có phim nào được đăng tải.
       </div>
     `;
   }
