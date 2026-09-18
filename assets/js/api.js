@@ -112,18 +112,54 @@ const RophimAPI = (() => {
     if (error) throw error;
   }
 
-  async function uploadVideo(file, movieId, episodeNumber) {
+  // Upload with progress callback using XHR (Supabase SDK doesn't support upload progress)
+  async function uploadVideo(file, movieId, episodeNumber, onProgress) {
     if (isDemo()) throw new Error('Vui lòng cấu hình Supabase trong config.js để upload.');
     await window.sbReady;
     const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
     const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : 'mp4';
     const path = `${movieId}/ep-${episodeNumber}-${Date.now()}.${safeExt}`;
-    const { data, error } = await window.sb.storage
-      .from(window.ROPHIM_CONFIG.VIDEOS_BUCKET)
-      .upload(path, file, { cacheControl: '3600', upsert: false });
-    if (error) throw error;
-    const { data: pub } = window.sb.storage.from(window.ROPHIM_CONFIG.VIDEOS_BUCKET).getPublicUrl(path);
-    return { path: data.path, url: pub.publicUrl };
+
+    // Get authenticated token
+    const { data: sess } = await window.sb.auth.getSession();
+    const token = sess?.session?.access_token;
+    if (!token) throw new Error('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.');
+
+    const url = `${window.ROPHIM_CONFIG.SUPABASE_URL}/storage/v1/object/${window.ROPHIM_CONFIG.VIDEOS_BUCKET}/${path}`;
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.setRequestHeader('apikey', window.ROPHIM_CONFIG.SUPABASE_ANON_KEY);
+      xhr.setRequestHeader('x-upsert', 'false');
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          onProgress(pct, e.loaded, e.total);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const { data: pub } = window.sb.storage.from(window.ROPHIM_CONFIG.VIDEOS_BUCKET).getPublicUrl(path);
+          resolve({ path, url: pub.publicUrl });
+        } else {
+          let errMsg = 'Upload thất bại';
+          try {
+            const body = JSON.parse(xhr.responseText);
+            errMsg = body.message || body.error || errMsg;
+          } catch {}
+          reject(new Error(errMsg));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Lỗi mạng khi upload'));
+      xhr.ontimeout = () => reject(new Error('Upload quá thời gian'));
+      xhr.timeout = 30 * 60 * 1000; // 30 min for large files
+      xhr.send(file);
+    });
   }
 
   return {
