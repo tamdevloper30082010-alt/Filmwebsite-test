@@ -265,6 +265,62 @@
       .movie-row { grid-template-columns: 50px 1fr; }
       .movie-row .row-actions { grid-column: 1/-1; display: flex; gap: 8px; }
     }
+
+    /* Connection Status */
+    .conn-status {
+      margin-top: 20px;
+      padding: 16px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 13px;
+    }
+    .conn-status-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .conn-status-head strong { color: var(--text-2); font-size: 13px; }
+    .conn-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      gap: 12px;
+    }
+    .conn-label { color: var(--text-3); flex-shrink: 0; }
+    .conn-value {
+      color: var(--text);
+      text-align: right;
+      word-break: break-all;
+      font-weight: 500;
+    }
+    .conn-checking { color: var(--text-3); }
+    .conn-ok { color: #4ade80; font-weight: 600; }
+    .conn-ok::before { content: '🟢 '; }
+    .conn-warn { color: #fbbf24; font-weight: 600; }
+    .conn-warn::before { content: '🟡 '; }
+    .conn-error { color: #fca5a5; font-weight: 600; }
+    .conn-error::before { content: '🔴 '; }
+    .conn-hint {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      border-radius: 8px;
+      color: #fcd34d;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .conn-hint.error {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+    }
+    .conn-hint strong { color: #fff; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -290,6 +346,33 @@
 
       <div style="margin-top:20px;text-align:center;font-size:12px;color:var(--text-3)">
         🔒 Khu vực dành riêng cho quản trị viên. Chỉ những người được cấp tài khoản mới có thể truy cập.
+      </div>
+
+      <!-- Connection Status -->
+      <div id="connStatus" class="conn-status">
+        <div class="conn-status-head">
+          <strong>🔌 Trạng thái kết nối</strong>
+          <button type="button" id="testConnBtn" class="btn btn-sm btn-ghost">🔄 Kiểm tra lại</button>
+        </div>
+        <div id="connStatusBody">
+          <div class="conn-row">
+            <span class="conn-label">Máy chủ dữ liệu:</span>
+            <span class="conn-value" id="connServer">—</span>
+          </div>
+          <div class="conn-row">
+            <span class="conn-label">Trạng thái:</span>
+            <span class="conn-value" id="connStatusText"><span class="conn-checking">Đang kiểm tra...</span></span>
+          </div>
+          <div class="conn-row">
+            <span class="conn-label">Thời gian phản hồi:</span>
+            <span class="conn-value" id="connLatency">—</span>
+          </div>
+          <div class="conn-row">
+            <span class="conn-label">Cập nhật lần cuối:</span>
+            <span class="conn-value" id="connTime">—</span>
+          </div>
+          <div id="connHint" class="conn-hint hidden"></div>
+        </div>
       </div>
     </section>
 
@@ -431,7 +514,88 @@
       document.getElementById('setupNotice').classList.remove('hidden');
     } else {
       checkAuth();
+      runConnTest();
     }
+
+    // ---------- Connection test ----------
+    async function runConnTest() {
+      const url = window.ROPHIM_CONFIG.SUPABASE_URL;
+      const key = window.ROPHIM_CONFIG.SUPABASE_ANON_KEY;
+      const serverEl = document.getElementById('connServer');
+      const statusEl = document.getElementById('connStatusText');
+      const latencyEl = document.getElementById('connLatency');
+      const timeEl = document.getElementById('connTime');
+      const hintEl = document.getElementById('connHint');
+
+      // Show URL (just hostname for friendliness)
+      try {
+        const u = new URL(url);
+        serverEl.textContent = u.host;
+      } catch {
+        serverEl.textContent = url;
+      }
+
+      statusEl.innerHTML = '<span class="conn-checking">⏳ Đang kiểm tra...</span>';
+      latencyEl.textContent = '—';
+      hintEl.classList.add('hidden');
+
+      const start = performance.now();
+      try {
+        const r = await fetch(url + '/auth/v1/settings', {
+          method: 'GET',
+          headers: { 'apikey': key }
+        });
+        const elapsed = Math.round(performance.now() - start);
+        latencyEl.textContent = `${elapsed} ms`;
+
+        if (r.ok) {
+          const data = await r.json();
+          statusEl.innerHTML = '<span class="conn-ok">Đã kết nối — sẵn sàng</span>';
+          timeEl.textContent = new Date().toLocaleTimeString('vi-VN');
+
+          // Show extra info if available
+          if (data.mailer_autoconfirm !== undefined) {
+            const extra = data.mailer_autoconfirm
+              ? '✓ Email tự động xác nhận'
+              : '⚠ Email cần xác nhận thủ công';
+            const extraRow = document.createElement('div');
+            extraRow.className = 'conn-row';
+            extraRow.innerHTML = `<span class="conn-label">Xác nhận email:</span><span class="conn-value">${extra}</span>`;
+            document.getElementById('connStatusBody').appendChild(extraRow);
+          }
+        } else if (r.status === 401) {
+          statusEl.innerHTML = '<span class="conn-error">Mã kết nối không hợp lệ</span>';
+          hintEl.className = 'conn-hint error';
+          hintEl.classList.remove('hidden');
+          hintEl.innerHTML = '<strong>Nguyên nhân có thể:</strong><br>• Mã kết nối (API key) bị sai hoặc đã bị thu hồi<br>• Mã này không thuộc về máy chủ này<br><br><strong>Cách sửa:</strong> Vào Supabase → Settings → API → copy lại "Publishable key" mới → cập nhật vào file <code>config.js</code> trong repo GitHub.';
+        } else if (r.status === 404) {
+          statusEl.innerHTML = '<span class="conn-error">Không tìm thấy máy chủ</span>';
+          hintEl.className = 'conn-hint error';
+          hintEl.classList.remove('hidden');
+          hintEl.innerHTML = '<strong>Nguyên nhân có thể:</strong><br>• Địa chỉ máy chủ (URL) bị sai<br>• Project chưa được tạo trên Supabase<br><br><strong>Cách sửa:</strong> Kiểm tra lại URL trong file <code>config.js</code>.';
+        } else if (r.status === 403) {
+          statusEl.innerHTML = '<span class="conn-warn">Máy chủ từ chối truy cập</span>';
+          hintEl.className = 'conn-hint';
+          hintEl.classList.remove('hidden');
+          hintEl.innerHTML = '⚠ <strong>Project có thể đang tạm dừng.</strong><br>Vào Supabase dashboard → tìm project → bấm "Restore" nếu thấy banner tạm dừng.';
+        } else {
+          statusEl.innerHTML = `<span class="conn-warn">Phản hồi lỗi (HTTP ${r.status})</span>`;
+          hintEl.className = 'conn-hint';
+          hintEl.classList.remove('hidden');
+          hintEl.innerHTML = `⚠ Máy chủ phản hồi mã lỗi ${r.status}. Vui lòng thử lại sau ít phút.`;
+        }
+      } catch (err) {
+        statusEl.innerHTML = '<span class="conn-error">Không thể kết nối</span>';
+        latencyEl.textContent = '—';
+        hintEl.className = 'conn-hint error';
+        hintEl.classList.remove('hidden');
+        hintEl.innerHTML = '<strong>Không thể kết nối đến máy chủ.</strong><br>Nguyên nhân có thể: mất mạng, URL sai, hoặc Supabase đang bảo trì.<br><br><strong>Thử lại:</strong> Kiểm tra kết nối internet và bấm "🔄 Kiểm tra lại".';
+      }
+    }
+
+    document.getElementById('testConnBtn').addEventListener('click', () => {
+      runConnTest();
+    });
 
     async function checkAuth() {
       try {
