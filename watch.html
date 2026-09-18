@@ -272,13 +272,13 @@
 
     async function load() {
       if (!movieId) {
-        document.getElementById('loading').textContent = 'Không có ID phim.';
+        document.getElementById('loading').innerHTML = '<div style="font-size:48px;opacity:.4;margin-bottom:16px">🤔</div><p>Không tìm thấy phim này. Vui lòng quay lại <a href="index.html" style="color:var(--brand-2)">trang chủ</a>.</p>';
         return;
       }
       try {
         currentMovie = await RophimAPI.getMovie(movieId);
         if (!currentMovie) {
-          document.getElementById('loading').textContent = 'Không tìm thấy phim.';
+          document.getElementById('loading').innerHTML = '<div style="font-size:48px;opacity:.4;margin-bottom:16px">🤔</div><p>Phim này không tồn tại hoặc đã bị xóa.</p>';
           return;
         }
 
@@ -338,7 +338,7 @@
         });
       } catch (err) {
         console.error(err);
-        document.getElementById('loading').textContent = 'Lỗi tải phim: ' + err.message;
+        document.getElementById('loading').innerHTML = '<div style="font-size:48px;opacity:.4;margin-bottom:16px">😥</div><p>Không thể tải phim lúc này. Vui lòng thử lại sau.</p>';
       }
     }
 

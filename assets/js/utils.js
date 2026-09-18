@@ -174,7 +174,7 @@ window.renderChrome = function (active = '') {
           <div class="footer-grid">
             <div class="footer-col">
               <h4>Rophim</h4>
-              <p>Kho phim trực tuyến của riêng bạn. Upload, quản lý, và chia sẻ phim dễ dàng.</p>
+              <p>Kho phim trực tuyến với hàng ngàn bộ phim hấp dẫn. Xem phim chất lượng cao, miễn phí.</p>
             </div>
             <div class="footer-col">
               <h4>Khám phá</h4>
@@ -183,18 +183,16 @@ window.renderChrome = function (active = '') {
               <a href="browse.html">Tất cả thể loại</a>
             </div>
             <div class="footer-col">
-              <h4>Tài khoản</h4>
+              <h4>Liên hệ</h4>
               <a href="admin/">Trang quản trị</a>
-              <a href="README.md">Hướng dẫn cài đặt</a>
             </div>
             <div class="footer-col">
               <h4>Lưu ý</h4>
-              <a href="#">Chỉ đăng nội dung bạn có quyền phân phối.</a>
-              <a href="#">Mọi dữ liệu thuộc về chủ sở hữu tương ứng.</a>
+              <p>Chỉ đăng nội dung bạn có quyền phân phối.</p>
             </div>
           </div>
           <div class="footer-bottom">
-            © ${new Date().getFullYear()} Rophim · Được host trên GitHub Pages
+            © ${new Date().getFullYear()} Rophim
           </div>
         </div>
       </footer>

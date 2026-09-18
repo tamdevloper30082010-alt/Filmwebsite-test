@@ -14,8 +14,8 @@
 
   <main class="container">
     <div id="loading" style="padding:80px;text-align:center;color:var(--text-3)">
-      <div class="skeleton" style="max-width:300px;margin:0 auto 20px"></div>
-      <div class="skeleton" style="max-width:600px;height:24px;margin:0 auto"></div>
+      <div style="font-size:48px;opacity:.4;margin-bottom:16px">🎬</div>
+      <p>Đang tải thông tin phim...</p>
     </div>
 
     <article id="content" class="hidden">
@@ -70,13 +70,13 @@
 
     async function loadMovie() {
       if (!movieId) {
-        document.getElementById('loading').innerHTML = '<p>Không có ID phim.</p>';
+        document.getElementById('loading').innerHTML = '<div style="font-size:48px;opacity:.4;margin-bottom:16px">🤔</div><p>Không tìm thấy phim này. Vui lòng quay lại <a href="index.html" style="color:var(--brand-2)">trang chủ</a>.</p>';
         return;
       }
       try {
         const movie = await RophimAPI.getMovie(movieId);
         if (!movie) {
-          document.getElementById('loading').innerHTML = '<p>Không tìm thấy phim.</p>';
+          document.getElementById('loading').innerHTML = '<div style="font-size:48px;opacity:.4;margin-bottom:16px">🤔</div><p>Phim này không tồn tại hoặc đã bị xóa. Hãy thử <a href="browse.html" style="color:var(--brand-2)">xem phim khác</a>.</p>';
           return;
         }
 
@@ -172,7 +172,7 @@
         });
       } catch (err) {
         console.error(err);
-        document.getElementById('loading').innerHTML = '<p>Lỗi tải phim.</p>';
+        document.getElementById('loading').innerHTML = '<div style="font-size:48px;opacity:.4;margin-bottom:16px">😥</div><p>Không thể tải phim lúc này. Vui lòng thử lại sau.</p>';
       }
     }
 

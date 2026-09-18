@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Admin Panel — Rophim</title>
+  <title>Quản trị — Rophim</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-size='62' font-family='Arial' font-weight='900' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="../assets/css/theme.css">
   <link rel="stylesheet" href="../assets/css/detail.css">
@@ -18,10 +18,11 @@
       gap: 14px;
     }
     .admin-header h1 {
-      font-size: 28px;
+      font-size: 26px;
       margin: 0;
       letter-spacing: -0.02em;
     }
+
     .admin-tabs {
       display: flex;
       gap: 6px;
@@ -39,6 +40,7 @@
       border-bottom: 2px solid transparent;
       margin-bottom: -1px;
       transition: all .2s;
+      font-size: 14px;
     }
     .admin-tab:hover { color: var(--text); }
     .admin-tab.active {
@@ -77,6 +79,7 @@
       border-color: var(--brand-1);
     }
     .form-grid textarea { resize: vertical; min-height: 80px; }
+    .form-grid .hint { font-size: 12px; color: var(--text-3); }
 
     .panel {
       background: var(--bg-1);
@@ -220,7 +223,7 @@
     }
     .login-screen h1 {
       margin: 0 0 8px;
-      font-size: 28px;
+      font-size: 26px;
     }
     .login-screen p {
       color: var(--text-3);
@@ -231,20 +234,30 @@
       grid-template-columns: 1fr;
     }
 
-    .auth-banner {
-      background: rgba(99, 102, 241, 0.08);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      border-radius: var(--radius);
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      font-size: 13px;
-      color: var(--text-2);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
+    /* Setup notice */
+    .setup-notice {
+      max-width: 480px;
+      margin: 80px auto;
+      padding: 40px;
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      text-align: center;
     }
-    .auth-banner strong { color: var(--text); }
+    .setup-notice .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    .setup-notice h1 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+    .setup-notice p {
+      color: var(--text-3);
+      margin: 0 0 8px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
 
     @media (max-width: 720px) {
       .form-grid, .episode-grid { grid-template-columns: 1fr; }
@@ -260,46 +273,39 @@
   <main class="container admin-page">
     <!-- LOGIN SCREEN -->
     <section id="loginScreen" class="login-screen hidden">
-      <h1>🔐 Admin Panel</h1>
-      <p>Đăng nhập để upload và quản lý toàn bộ website.</p>
+      <h1>🔐 Đăng nhập quản trị</h1>
+      <p>Vui lòng nhập tài khoản và mật khẩu đã được cấp.</p>
 
       <div id="loginMsg" class="msg hidden" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px"></div>
 
       <form id="loginForm" class="form-grid">
-        <label class="full">Email
-          <input name="email" type="email" required placeholder="admin@example.com">
+        <label class="full">Tài khoản
+          <input name="email" type="email" required placeholder="admin@example.com" autocomplete="username">
         </label>
         <label class="full">Mật khẩu
-          <input name="password" type="password" required placeholder="••••••••">
+          <input name="password" type="password" required placeholder="••••••••" autocomplete="current-password">
         </label>
         <button type="submit" class="btn btn-primary full">Đăng nhập</button>
-        <button type="button" id="signupBtn" class="btn btn-ghost full">Tạo tài khoản Admin mới</button>
       </form>
 
-      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--text-3)">
-        <strong>Lần đầu dùng?</strong> Bấm "Tạo tài khoản" để tạo user admin đầu tiên. Sau đó dùng chính email/mật khẩu đó để đăng nhập.
-        <br><br>
-        ⚠️ Cần cấu hình <code>config.js</code> trước — xem <a href="../README.md" style="color:var(--brand-2)">README</a> để biết chi tiết.
+      <div style="margin-top:20px;text-align:center;font-size:12px;color:var(--text-3)">
+        Chưa có tài khoản? Liên hệ quản trị viên để được cấp.
       </div>
+    </section>
 
-      <div style="margin-top:18px;padding:14px;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;font-size:12px">
-        <strong style="color:var(--text-2)">🔧 Debug kết nối</strong>
-        <div id="debugInfo" style="margin-top:8px;font-family:monospace;font-size:11px;color:var(--text-3);word-break:break-all">
-          <div>URL: <span id="dbgUrl">—</span></div>
-          <div>Status: <span id="dbgStatus">Đang kiểm tra...</span></div>
-        </div>
-        <button type="button" id="testConnBtn" class="btn btn-sm btn-ghost" style="margin-top:10px">🔄 Test kết nối</button>
-      </div>
+    <!-- SETUP NOTICE -->
+    <section id="setupNotice" class="setup-notice hidden">
+      <div class="icon">⚙️</div>
+      <h1>Hệ thống chưa sẵn sàng</h1>
+      <p>Trang quản trị cần được cấu hình trước khi sử dụng.</p>
+      <p style="margin-top:16px"><a href="../index.html" class="btn btn-ghost">Về trang chủ</a></p>
     </section>
 
     <!-- ADMIN PANEL -->
     <section id="adminPanel" class="hidden">
-      <div style="margin-bottom:8px;padding:12px 16px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:10px;font-size:13px;color:var(--text-2);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-        <span>📍 Bạn đang ở trang quản trị riêng biệt tại <code>/admin/</code>. Trang này không hiển thị với khách truy cập.</span>
-      </div>
       <div class="admin-header">
         <div>
-          <h1>⚙ Quản trị</h1>
+          <h1>⚙ Trang quản trị</h1>
           <p class="muted" id="adminUserLine">Đang tải...</p>
         </div>
         <div style="display:flex;gap:10px">
@@ -308,12 +314,8 @@
         </div>
       </div>
 
-      <div class="auth-banner">
-        <span><strong>Chào admin!</strong> Mọi thay đổi sẽ được lưu vào Supabase và hiển thị cho mọi người xem.</span>
-      </div>
-
       <div class="admin-tabs">
-        <button class="admin-tab active" data-tab="upload">📤 Đăng phim</button>
+        <button class="admin-tab active" data-tab="upload">📤 Đăng phim mới</button>
         <button class="admin-tab" data-tab="manage">📚 Quản lý phim</button>
       </div>
 
@@ -328,20 +330,20 @@
               </label>
               <label>Loại phim *
                 <select name="type" required>
-                  <option value="series">Phim bộ / nhiều tập</option>
-                  <option value="single">Phim lẻ</option>
+                  <option value="series">Phim bộ (nhiều tập)</option>
+                  <option value="single">Phim lẻ (1 tập)</option>
                 </select>
               </label>
               <label>Thể loại *
                 <select name="genre" id="genreSelectForm" required></select>
               </label>
-              <label>Năm *
+              <label>Năm phát hành *
                 <input name="year" type="number" min="1900" max="2100" value="2026" required>
               </label>
               <label>Chất lượng *
                 <select name="quality" required>
                   <option value="HD">HD</option>
-                  <option value="FHD" selected>FHD</option>
+                  <option value="FHD" selected>Full HD</option>
                   <option value="4K">4K</option>
                 </select>
               </label>
@@ -349,43 +351,47 @@
                 <input name="country" placeholder="Việt Nam">
               </label>
               <label>Đạo diễn
-                <input name="director" placeholder="Đạo diễn...">
+                <input name="director" placeholder="Tên đạo diễn">
               </label>
-              <label>Diễn viên
-                <input name="cast_list" placeholder="Diễn viên chính...">
+              <label>Diễn viên chính
+                <input name="cast_list" placeholder="Tên các diễn viên">
               </label>
               <label>Thời lượng
                 <input name="duration" placeholder="120 phút hoặc 45 phút/tập">
               </label>
-              <label>Đánh giá (0-10)
+              <label>Điểm đánh giá (0-10)
                 <input name="rating" type="number" step="0.1" min="0" max="10" value="7.5">
               </label>
-              <label>Poster URL
-                <input name="poster" placeholder="https://...">
+              <label>Ảnh poster (URL)
+                <input name="poster" placeholder="Dán link ảnh bìa phim">
+                <span class="hint">Click chuột phải vào ảnh → "Sao chép địa chỉ hình ảnh"</span>
               </label>
-              <label>Backdrop URL
-                <input name="backdrop" placeholder="https://...">
+              <label>Ảnh nền (URL)
+                <input name="backdrop" placeholder="Dán link ảnh nền lớn">
+                <span class="hint">Tùy chọn - nếu không có sẽ dùng ảnh poster</span>
               </label>
-              <label class="full">Mô tả
-                <textarea name="description" rows="3" placeholder="Mô tả phim..."></textarea>
+              <label class="full">Mô tả phim
+                <textarea name="description" rows="3" placeholder="Nội dung tóm tắt phim..."></textarea>
               </label>
               <label class="full" style="flex-direction:row;align-items:center;gap:8px">
                 <input type="checkbox" name="featured" style="width:auto;margin:0">
-                <span>Hiển thị ở Hero carousel trang chủ</span>
+                <span>Hiển thị nổi bật ở trang chủ</span>
               </label>
             </div>
 
-            <h2 style="margin-top:30px">Danh sách tập / Video</h2>
-            <p class="muted" style="margin-top:-12px;margin-bottom:14px">Mỗi tập có thể upload file từ máy hoặc nhập URL video (YouTube, Vimeo, .mp4, .m3u8...).</p>
+            <h2 style="margin-top:30px">Danh sách tập</h2>
+            <p class="muted" style="margin-top:-12px;margin-bottom:14px">
+              Mỗi tập có thể upload file video từ máy tính, hoặc dán link YouTube / Vimeo / file .mp4.
+            </p>
             <div id="episodes" class="episode-editor"></div>
             <div style="display:flex;gap:12px;align-items:center;margin-bottom:24px;flex-wrap:wrap">
-              <button type="button" class="btn btn-ghost" id="addEpisodeBtn">＋ Thêm tập</button>
-              <span class="muted">Upload video sẽ tự lưu vào Supabase Storage.</span>
+              <button type="button" class="btn btn-ghost" id="addEpisodeBtn">＋ Thêm tập mới</button>
+              <span class="muted">Phim lẻ chỉ cần 1 tập.</span>
             </div>
 
             <div style="display:flex;gap:12px;flex-wrap:wrap">
-              <button type="submit" class="btn btn-primary" id="submitBtn">📤 Đăng phim</button>
-              <button type="reset" class="btn btn-ghost" id="resetBtn">Làm lại</button>
+              <button type="submit" class="btn btn-primary" id="submitBtn">📤 Đăng phim lên website</button>
+              <button type="reset" class="btn btn-ghost" id="resetBtn">Xóa form</button>
             </div>
           </form>
         </div>
@@ -394,7 +400,7 @@
       <!-- MANAGE TAB -->
       <div id="manageTab" class="admin-tab-content hidden">
         <div class="panel">
-          <h2>Danh sách phim <span class="muted" id="manageCount"></span></h2>
+          <h2>Danh sách phim đã đăng <span class="muted" id="manageCount"></span></h2>
           <div id="movieList" class="movie-list"></div>
         </div>
       </div>
@@ -408,60 +414,24 @@
   <script>
     renderChrome();
 
-    // ---------- Setup ----------
     let episodeSeq = 0;
     const loginScreen = document.getElementById('loginScreen');
     const adminPanel = document.getElementById('adminPanel');
     const loginMsg = document.getElementById('loginMsg');
 
     // Populate genres
-    document.getElementById('genreSelectForm').innerHTML =
-      RophimAPI.GENRES.map(g => `<option value="${RophimUI.esc(g)}">${RophimUI.esc(g)}</option>`).join('');
+    const genreSelect = document.getElementById('genreSelectForm');
+    if (genreSelect) {
+      genreSelect.innerHTML =
+        RophimAPI.GENRES.map(g => `<option value="${RophimUI.esc(g)}">${RophimUI.esc(g)}</option>`).join('');
+    }
 
-    // Check demo mode
+    // Check config
     if (RophimAPI.isDemo()) {
-      loginScreen.classList.remove('hidden');
-      loginScreen.innerHTML = `
-        <h1>⚠ Demo Mode</h1>
-        <p>Supabase chưa được cấu hình. Mở file <code>config.js</code> và điền URL + anon key từ project Supabase của bạn để bắt đầu.</p>
-        <p>Xem <a href="../README.md" style="color:var(--brand-2)">hướng dẫn cài đặt</a> để biết chi tiết.</p>
-      `;
+      document.getElementById('setupNotice').classList.remove('hidden');
     } else {
       checkAuth();
-      runConnTest();
     }
-
-    // ---------- Connection test ----------
-    async function runConnTest() {
-      const urlEl = document.getElementById('dbgUrl');
-      const statusEl = document.getElementById('dbgStatus');
-      const url = window.ROPHIM_CONFIG.SUPABASE_URL;
-      const key = window.ROPHIM_CONFIG.SUPABASE_ANON_KEY;
-      urlEl.textContent = url;
-      try {
-        // Test 1: ping root (no auth needed) - check if project exists / paused
-        const r1 = await fetch(url + '/auth/v1/settings', {
-          method: 'GET',
-          headers: { 'apikey': key }
-        });
-        if (r1.ok) {
-          const data = await r1.json();
-          statusEl.innerHTML = `<span style="color:#4ade80">✅ Kết nối OK</span> — Mailer autoconfirm: <strong>${data.mailer_autoconfirm}</strong>`;
-        } else if (r1.status === 401) {
-          statusEl.innerHTML = `<span style="color:#fca5a5">❌ HTTP 401 — Key không hợp lệ</span><br><small style="color:var(--text-3)">Có thể: (1) Key copy sai/thiếu ký tự, (2) Lấy key từ project khác, (3) Project đang pause</small>`;
-        } else if (r1.status === 404) {
-          statusEl.innerHTML = `<span style="color:#fca5a5">❌ HTTP 404 — Project không tồn tại</span><br><small style="color:var(--text-3)">URL sai, kiểm tra lại Project Ref</small>`;
-        } else {
-          statusEl.innerHTML = `<span style="color:#fbbf24">⚠ HTTP ${r1.status}</span><br><small style="color:var(--text-3)">${r1.statusText || 'Lỗi không xác định'}</small>`;
-        }
-      } catch (err) {
-        statusEl.innerHTML = `<span style="color:#fca5a5">❌ ${err.message}</span><br><small style="color:var(--text-3)">URL không tồn tại hoặc mạng có vấn đề</small>`;
-      }
-    }
-    document.getElementById('testConnBtn').onclick = () => {
-      document.getElementById('dbgStatus').textContent = 'Đang kiểm tra...';
-      runConnTest();
-    };
 
     async function checkAuth() {
       try {
@@ -487,20 +457,23 @@
     function showAdmin(user) {
       loginScreen.classList.add('hidden');
       adminPanel.classList.remove('hidden');
-      document.getElementById('adminUserLine').textContent = `Đang đăng nhập: ${user.email}`;
+      document.getElementById('adminUserLine').textContent = `Xin chào, ${user.email}`;
       addEpisode();
       loadMovieList();
     }
 
     // ---------- Auth ----------
     function showLoginError(msg) {
-      // Make "Failed to fetch" more helpful
+      // Friendly error messages
       if (msg === 'Failed to fetch' || msg.includes('fetch')) {
-        msg = '❌ Không kết nối được Supabase. Kiểm tra URL trong config.js hoặc xem phần Debug bên dưới.';
+        msg = '❌ Không thể kết nối đến máy chủ. Vui lòng thử lại sau.';
+      } else if (msg.includes('Invalid login') || msg.includes('credentials')) {
+        msg = '❌ Tài khoản hoặc mật khẩu không đúng.';
+      } else if (msg.includes('Email not confirmed')) {
+        msg = '❌ Tài khoản chưa được xác nhận. Liên hệ quản trị viên.';
       }
       loginMsg.textContent = msg;
       loginMsg.classList.remove('hidden');
-      setTimeout(() => loginMsg.classList.add('hidden'), 8000);
     }
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -509,25 +482,17 @@
       const email = fd.get('email').trim();
       const password = fd.get('password');
       loginMsg.textContent = 'Đang đăng nhập...';
+      loginMsg.style.background = 'rgba(99, 102, 241, 0.1)';
+      loginMsg.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+      loginMsg.style.color = '#a5b4fc';
       loginMsg.classList.remove('hidden');
       try {
         await RophimAuth.signIn(email, password);
         loginMsg.classList.add('hidden');
       } catch (err) {
-        showLoginError(err.message);
-      }
-    });
-
-    document.getElementById('signupBtn').addEventListener('click', async () => {
-      const fd = new FormData(document.getElementById('loginForm'));
-      const email = fd.get('email').trim();
-      const password = fd.get('password');
-      if (!email || !password) return showLoginError('Nhập email và mật khẩu trước.');
-      if (password.length < 6) return showLoginError('Mật khẩu phải ≥ 6 ký tự.');
-      try {
-        await RophimAuth.signUp(email, password);
-        RophimUI.toast('Tạo tài khoản thành công! Đang đăng nhập...', 'success');
-      } catch (err) {
+        loginMsg.style.background = 'rgba(239,68,68,0.1)';
+        loginMsg.style.borderColor = 'rgba(239,68,68,0.3)';
+        loginMsg.style.color = '#fca5a5';
         showLoginError(err.message);
       }
     });
@@ -552,40 +517,39 @@
     // ---------- Episodes editor ----------
     function addEpisode(data = {}) {
       episodeSeq++;
-      const id = `ep-${episodeSeq}`;
       const box = document.createElement('div');
       box.className = 'episode-row';
-      box.dataset.ep = id;
+      box.dataset.ep = `ep-${episodeSeq}`;
       box.innerHTML = `
         <div class="episode-top">
           <span class="episode-number">Tập</span>
-          <button type="button" class="btn btn-sm btn-danger" data-remove>× Xóa</button>
+          <button type="button" class="btn btn-sm btn-danger" data-remove>× Xóa tập</button>
         </div>
         <div class="episode-grid">
-          <label>Tên tập
+          <label>Tên tập (tùy chọn)
             <input data-title value="${RophimUI.esc(data.title || '')}" placeholder="Tập ${episodeSeq}">
           </label>
           <label>Thời lượng (giây)
             <input data-duration type="number" min="0" value="${data.duration || 0}">
           </label>
-          <label class="full">Upload file video
+          <label class="full">Chọn file video từ máy
             <input data-file type="file" accept="video/*">
           </label>
-          <label class="full">Hoặc URL video (YouTube, Vimeo, .mp4, .m3u8)
+          <label class="full">Hoặc dán link video (YouTube, Vimeo, .mp4, .m3u8)
             <input data-url value="${RophimUI.esc(data.url || '')}" placeholder="https://...">
           </label>
         </div>
-        <div class="file-info" data-info>Chưa chọn file.</div>
+        <div class="file-info" data-info>Chưa chọn file hoặc link video.</div>
       `;
       box.querySelector('[data-file]').addEventListener('change', (e) => {
         const f = e.target.files[0];
         const info = box.querySelector('[data-info]');
         if (f) {
           info.classList.add('has-file');
-          info.textContent = `✓ ${f.name} • ${RophimUI.formatSize(f.size)} • ${f.type || 'video'}`;
+          info.textContent = `✓ Đã chọn: ${f.name} • ${RophimUI.formatSize(f.size)}`;
         } else {
           info.classList.remove('has-file');
-          info.textContent = 'Chưa chọn file.';
+          info.textContent = 'Chưa chọn file hoặc link video.';
         }
       });
       box.querySelector('[data-remove]').onclick = () => {
@@ -621,15 +585,14 @@
       const fd = new FormData(form);
       const rows = document.querySelectorAll('.episode-row');
       if (!rows.length) {
-        return RophimUI.toast('Hãy thêm ít nhất 1 tập.', 'error');
+        return RophimUI.toast('Hãy thêm ít nhất 1 tập trước khi đăng.', 'error');
       }
 
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
-      btn.textContent = 'Đang upload...';
+      btn.textContent = 'Đang xử lý...';
 
       try {
-        // 1) Create movie first
         const movieData = {
           title: fd.get('title').trim(),
           type: fd.get('type'),
@@ -649,7 +612,6 @@
         const movie = await RophimAPI.upsertMovie(movieData);
         btn.textContent = 'Đang upload video...';
 
-        // 2) Upload each episode
         let i = 0;
         for (const row of rows) {
           const file = row.querySelector('[data-file]').files[0];
@@ -659,7 +621,7 @@
           const info = row.querySelector('[data-info]');
 
           if (!file && !url) {
-            throw new Error(`Tập ${i + 1}: chọn file hoặc nhập URL.`);
+            throw new Error(`Tập ${i + 1}: vui lòng chọn file hoặc dán link video.`);
           }
 
           info.classList.add('has-file');
@@ -667,13 +629,13 @@
           let videoPath = '';
 
           if (file) {
-            info.innerHTML = `⏳ Đang upload ${file.name}... <div class="upload-progress"><div class="upload-progress-bar"></div></div>`;
+            info.innerHTML = `⏳ Đang tải lên "${file.name}"... <div class="upload-progress"><div class="upload-progress-bar"></div></div>`;
             const result = await RophimAPI.uploadVideo(file, movie.id, i + 1);
             videoUrl = result.url;
             videoPath = result.path;
-            info.innerHTML = `✓ Đã upload: ${file.name}`;
+            info.innerHTML = `✓ Đã tải lên thành công: ${file.name}`;
           } else {
-            info.innerHTML = `✓ Dùng URL: ${url}`;
+            info.innerHTML = `✓ Đã lưu link video`;
           }
 
           await RophimAPI.addEpisode({
@@ -687,20 +649,19 @@
           i++;
         }
 
-        RophimUI.toast(`Đã đăng phim "${movie.title}" với ${i} tập!`, 'success');
+        RophimUI.toast(`Đã đăng phim "${movie.title}" với ${i} tập lên website!`, 'success');
         form.reset();
         document.getElementById('episodes').innerHTML = '';
         episodeSeq = 0;
         addEpisode();
         loadMovieList();
-        // Switch to manage tab
         document.querySelector('[data-tab="manage"]').click();
       } catch (err) {
         console.error(err);
-        RophimUI.toast('Lỗi: ' + err.message, 'error');
+        RophimUI.toast(err.message || 'Không thể đăng phim. Vui lòng thử lại.', 'error');
       } finally {
         btn.disabled = false;
-        btn.textContent = '📤 Đăng phim';
+        btn.textContent = '📤 Đăng phim lên website';
       }
     });
 
@@ -712,7 +673,7 @@
         const movies = await RophimAPI.listMovies({ sort: 'created_at' });
         document.getElementById('manageCount').textContent = `(${movies.length})`;
         if (!movies.length) {
-          c.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><h3>Chưa có phim nào</h3><p>Vào tab "Đăng phim" để thêm phim đầu tiên.</p></div>';
+          c.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><h3>Chưa có phim nào</h3><p>Vào tab "Đăng phim mới" để thêm phim đầu tiên.</p></div>';
           return;
         }
         c.innerHTML = movies.map(m => `
@@ -724,7 +685,7 @@
             </div>
             <a href="../movie.html?id=${RophimUI.esc(m.id)}" class="btn btn-ghost btn-sm" target="_blank">Xem</a>
             <div class="row-actions">
-              <button class="btn btn-sm btn-danger" data-delete="${RophimUI.esc(m.id)}">🗑</button>
+              <button class="btn btn-sm btn-danger" data-delete="${RophimUI.esc(m.id)}">🗑 Xóa</button>
             </div>
           </div>
         `).join('');
@@ -733,19 +694,19 @@
           btn.onclick = async () => {
             const id = btn.dataset.delete;
             const m = movies.find(x => x.id === id);
-            if (!confirm(`Xóa phim "${m.title}"? Toàn bộ tập và file video sẽ bị xóa vĩnh viễn.`)) return;
+            if (!confirm(`Bạn có chắc muốn xóa phim "${m.title}"?\nToàn bộ tập và video sẽ bị xóa vĩnh viễn.`)) return;
             try {
               await RophimAPI.deleteMovie(id);
-              RophimUI.toast('Đã xóa phim.', 'success');
+              RophimUI.toast('Đã xóa phim thành công.', 'success');
               loadMovieList();
             } catch (err) {
-              RophimUI.toast('Lỗi: ' + err.message, 'error');
+              RophimUI.toast('Không thể xóa phim: ' + err.message, 'error');
             }
           };
         });
       } catch (err) {
         console.error(err);
-        c.innerHTML = '<p class="muted">Lỗi tải danh sách phim.</p>';
+        c.innerHTML = '<p class="muted">Không thể tải danh sách phim.</p>';
       }
     }
   </script>
